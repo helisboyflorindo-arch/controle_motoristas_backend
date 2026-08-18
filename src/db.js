@@ -9,6 +9,7 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME,
 
     ssl: {
+        ca: process.env.MYSQL_CA,
         rejectUnauthorized: true
     },
 
