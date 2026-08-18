@@ -16,23 +16,22 @@ router.post('/', autenticar, async (req, res) => {
             destino,
             quantidade,
             valor,
-            data
+            data,
+            observacao
         } = req.body;
 
-        // ======================================================
-        // VALIDAR CAMPOS
-        // ======================================================
-
-        if (!origem || !destino || !quantidade || valor === undefined || valor === null) {
+        if (
+            !origem ||
+            !destino ||
+            !quantidade ||
+            valor === undefined ||
+            valor === null
+        ) {
             return res.status(400).json({
                 sucesso: false,
                 mensagem: 'Origem, destino, quantidade e valor são obrigatórios.'
             });
         }
-
-        // ======================================================
-        // MOTORISTA DO USUÁRIO LOGADO
-        // ======================================================
 
         const motoristaId = req.usuario.motorista_id;
 
@@ -42,10 +41,6 @@ router.post('/', autenticar, async (req, res) => {
                 mensagem: 'Este usuário não está associado a um motorista.'
             });
         }
-
-        // ======================================================
-        // CONVERTER VALORES
-        // ======================================================
 
         const quantidadeNumerica = Number(quantidade);
         const valorNumerico = Number(valor);
@@ -70,36 +65,25 @@ router.post('/', autenticar, async (req, res) => {
             });
         }
 
-        // ======================================================
-        // CALCULAR VALOR TOTAL
-        // ======================================================
-
-        const valorTotal = quantidadeNumerica * valorNumerico;
-
-        // ======================================================
-        // DATA
-        // ======================================================
+        const valorTotal =
+            quantidadeNumerica * valorNumerico;
 
         const dataFinal = data || new Date();
-
-
-        // ======================================================
-        // SALVAR NO BANCO
-        // ======================================================
 
         const [resultado] = await pool.query(
             `
             INSERT INTO corridas
             (
                 motorista_id,
-                data,
+                data_corrida,
                 quantidade,
                 valor,
                 valor_total,
-                origem,
-                destino
+                local_partida,
+                local_termino,
+                observacao
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             `,
             [
                 motoristaId,
@@ -108,37 +92,29 @@ router.post('/', autenticar, async (req, res) => {
                 valorNumerico,
                 valorTotal,
                 origem,
-                destino
+                destino,
+                observacao || null
             ]
         );
-
-
-        // ======================================================
-        // RESPOSTA
-        // ======================================================
 
         return res.status(201).json({
             sucesso: true,
             mensagem: 'Corrida registrada com sucesso.',
-
             corrida: {
                 id: resultado.insertId,
                 motorista_id: motoristaId,
-                data: dataFinal,
+                data_corrida: dataFinal,
                 quantidade: quantidadeNumerica,
                 valor: valorNumerico,
                 valor_total: valorTotal,
-                origem,
-                destino
+                local_partida: origem,
+                local_termino: destino,
+                observacao: observacao || null
             }
         });
 
     } catch (error) {
-
-        console.error(
-            'Erro ao registrar corrida:',
-            error
-        );
+        console.error('Erro ao registrar corrida:', error);
 
         return res.status(500).json({
             sucesso: false,
@@ -148,8 +124,9 @@ router.post('/', autenticar, async (req, res) => {
     }
 });
 
+
 // ======================================================
-// MINHAS CORRIDAS - MOTORISTA
+// MINHAS CORRIDAS
 // ======================================================
 
 router.get('/minhas', autenticar, async (req, res) => {
@@ -160,14 +137,16 @@ router.get('/minhas', autenticar, async (req, res) => {
         if (!motoristaId) {
             return res.status(400).json({
                 sucesso: false,
-                mensagem: 'Este utilizador não está associado a um motorista.'
+                mensagem: 'Este usuário não está associado a um motorista.'
             });
         }
 
         let filtro = '';
 
         if (periodo === 'hoje') {
-            filtro = 'AND DATE(data_corrida) = CURDATE()';
+            filtro = `
+                AND DATE(data_corrida) = CURDATE()
+            `;
         }
 
         if (periodo === 'mes') {
@@ -183,11 +162,11 @@ router.get('/minhas', autenticar, async (req, res) => {
                 id,
                 motorista_id,
                 data_corrida,
+                quantidade,
                 valor,
                 valor_total,
                 local_partida,
                 local_termino,
-                quantidade,
                 observacao,
                 created_at
             FROM corridas
@@ -222,25 +201,24 @@ router.get('/minhas', autenticar, async (req, res) => {
 
 router.get('/', autenticar, somenteAdmin, async (req, res) => {
     try {
-
         const [corridas] = await pool.query(
             `
             SELECT
                 c.id,
                 c.motorista_id,
                 m.nome AS motorista,
-                c.data,
+                c.data_corrida,
                 c.quantidade,
                 c.valor,
                 c.valor_total,
-                c.origem,
-                c.destino,
+                c.local_partida,
+                c.local_termino,
                 c.observacao,
                 c.created_at
             FROM corridas c
             INNER JOIN motoristas m
                 ON m.id = c.motorista_id
-            ORDER BY c.data DESC, c.id DESC
+            ORDER BY c.data_corrida DESC, c.id DESC
             `
         );
 
@@ -250,11 +228,7 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
         });
 
     } catch (error) {
-
-        console.error(
-            'Erro ao listar corridas:',
-            error
-        );
+        console.error('Erro ao listar corridas:', error);
 
         return res.status(500).json({
             sucesso: false,
@@ -263,6 +237,7 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
         });
     }
 });
+
 
 // ======================================================
 // RESUMO FINANCEIRO DO MOTORISTA
@@ -275,7 +250,7 @@ router.get('/resumo', autenticar, async (req, res) => {
         if (!motoristaId) {
             return res.status(400).json({
                 sucesso: false,
-                mensagem: 'Este utilizador não está associado a um motorista.'
+                mensagem: 'Este usuário não está associado a um motorista.'
             });
         }
 
@@ -285,23 +260,31 @@ router.get('/resumo', autenticar, async (req, res) => {
         let filtroDespesa = '';
 
         if (periodo === 'hoje') {
-            filtroCorrida = 'AND DATE(data_corrida) = CURDATE()';
-            filtroDespesa = 'AND DATE(data) = CURDATE()';
+            filtroCorrida = `
+                AND DATE(data_corrida) = CURDATE()
+            `;
+
+            filtroDespesa = `
+                AND DATE(data) = CURDATE()
+            `;
         }
 
         if (periodo === 'mes') {
-            filtroCorrida =
-                'AND YEAR(data_corrida) = YEAR(CURDATE()) ' +
-                'AND MONTH(data_corrida) = MONTH(CURDATE())';
+            filtroCorrida = `
+                AND YEAR(data_corrida) = YEAR(CURDATE())
+                AND MONTH(data_corrida) = MONTH(CURDATE())
+            `;
 
-            filtroDespesa =
-                'AND YEAR(data) = YEAR(CURDATE()) ' +
-                'AND MONTH(data) = MONTH(CURDATE())';
+            filtroDespesa = `
+                AND YEAR(data) = YEAR(CURDATE())
+                AND MONTH(data) = MONTH(CURDATE())
+            `;
         }
 
         const [ganhos] = await pool.query(
             `
-            SELECT COALESCE(SUM(valor_total), 0) AS total_ganho
+            SELECT
+                COALESCE(SUM(valor_total), 0) AS total_ganho
             FROM corridas
             WHERE motorista_id = ?
             ${filtroCorrida}
@@ -311,7 +294,8 @@ router.get('/resumo', autenticar, async (req, res) => {
 
         const [gastos] = await pool.query(
             `
-            SELECT COALESCE(SUM(valor), 0) AS total_gasto
+            SELECT
+                COALESCE(SUM(valor), 0) AS total_gasto
             FROM despesas
             WHERE motorista_id = ?
             ${filtroDespesa}
@@ -319,9 +303,14 @@ router.get('/resumo', autenticar, async (req, res) => {
             [motoristaId]
         );
 
-        const totalGanho = Number(ganhos[0].total_ganho || 0);
-        const totalGasto = Number(gastos[0].total_gasto || 0);
-        const dinheiroAtual = totalGanho - totalGasto;
+        const totalGanho =
+            Number(ganhos[0].total_ganho || 0);
+
+        const totalGasto =
+            Number(gastos[0].total_gasto || 0);
+
+        const dinheiroAtual =
+            totalGanho - totalGasto;
 
         return res.json({
             sucesso: true,
@@ -342,13 +331,13 @@ router.get('/resumo', autenticar, async (req, res) => {
     }
 });
 
+
 // ======================================================
 // BUSCAR CORRIDA POR ID
 // ======================================================
 
 router.get('/:id', autenticar, async (req, res) => {
     try {
-
         const { id } = req.params;
 
         const [corridas] = await pool.query(
@@ -357,12 +346,12 @@ router.get('/:id', autenticar, async (req, res) => {
                 c.id,
                 c.motorista_id,
                 m.nome AS motorista,
-                c.data,
+                c.data_corrida,
                 c.quantidade,
                 c.valor,
                 c.valor_total,
-                c.origem,
-                c.destino,
+                c.local_partida,
+                c.local_termino,
                 c.observacao,
                 c.created_at
             FROM corridas c
@@ -382,10 +371,6 @@ router.get('/:id', autenticar, async (req, res) => {
 
         const corrida = corridas[0];
 
-        // ======================================================
-        // MOTORISTA SÓ PODE VER A PRÓPRIA CORRIDA
-        // ======================================================
-
         if (
             req.usuario.tipo !== 'admin' &&
             corrida.motorista_id !== req.usuario.motorista_id
@@ -402,11 +387,7 @@ router.get('/:id', autenticar, async (req, res) => {
         });
 
     } catch (error) {
-
-        console.error(
-            'Erro ao buscar corrida:',
-            error
-        );
+        console.error('Erro ao buscar corrida:', error);
 
         return res.status(500).json({
             sucesso: false,
@@ -423,7 +404,6 @@ router.get('/:id', autenticar, async (req, res) => {
 
 router.put('/:id', autenticar, async (req, res) => {
     try {
-
         const { id } = req.params;
 
         const {
@@ -431,7 +411,8 @@ router.put('/:id', autenticar, async (req, res) => {
             destino,
             quantidade,
             valor,
-            data
+            data,
+            observacao
         } = req.body;
 
         if (
@@ -470,10 +451,6 @@ router.put('/:id', autenticar, async (req, res) => {
             });
         }
 
-        // ======================================================
-        // VERIFICAR CORRIDA
-        // ======================================================
-
         const [corridas] = await pool.query(
             `
             SELECT motorista_id
@@ -490,9 +467,9 @@ router.put('/:id', autenticar, async (req, res) => {
             });
         }
 
-        const motoristaId = corridas[0].motorista_id;
+        const motoristaId =
+            corridas[0].motorista_id;
 
-        // Motorista só pode editar a própria corrida
         if (
             req.usuario.tipo !== 'admin' &&
             motoristaId !== req.usuario.motorista_id
@@ -506,18 +483,20 @@ router.put('/:id', autenticar, async (req, res) => {
         const valorTotal =
             quantidadeNumerica * valorNumerico;
 
-        const dataFinal = data || new Date();
+        const dataFinal =
+            data || new Date();
 
         await pool.query(
             `
             UPDATE corridas
             SET
-                data = ?,
+                data_corrida = ?,
                 quantidade = ?,
                 valor = ?,
                 valor_total = ?,
-                origem = ?,
-                destino = ?
+                local_partida = ?,
+                local_termino = ?,
+                observacao = ?
             WHERE id = ?
             `,
             [
@@ -527,6 +506,7 @@ router.put('/:id', autenticar, async (req, res) => {
                 valorTotal,
                 origem,
                 destino,
+                observacao || null,
                 id
             ]
         );
@@ -537,11 +517,7 @@ router.put('/:id', autenticar, async (req, res) => {
         });
 
     } catch (error) {
-
-        console.error(
-            'Erro ao atualizar corrida:',
-            error
-        );
+        console.error('Erro ao atualizar corrida:', error);
 
         return res.status(500).json({
             sucesso: false,
@@ -558,7 +534,6 @@ router.put('/:id', autenticar, async (req, res) => {
 
 router.delete('/:id', autenticar, async (req, res) => {
     try {
-
         const { id } = req.params;
 
         const [corridas] = await pool.query(
@@ -577,9 +552,9 @@ router.delete('/:id', autenticar, async (req, res) => {
             });
         }
 
-        const motoristaId = corridas[0].motorista_id;
+        const motoristaId =
+            corridas[0].motorista_id;
 
-        // Motorista só pode apagar a própria corrida
         if (
             req.usuario.tipo !== 'admin' &&
             motoristaId !== req.usuario.motorista_id
@@ -604,11 +579,7 @@ router.delete('/:id', autenticar, async (req, res) => {
         });
 
     } catch (error) {
-
-        console.error(
-            'Erro ao excluir corrida:',
-            error
-        );
+        console.error('Erro ao excluir corrida:', error);
 
         return res.status(500).json({
             sucesso: false,
