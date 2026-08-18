@@ -16,12 +16,15 @@ router.post(
   upload.single('comprovativo'),
   async (req, res) => {
     try {
+      // IMPORTANTE:
+      // Com multipart/form-data, o multer cria req.body.
+      // Esta proteção evita o erro caso o body não exista.
       const {
         data,
         categoria,
         valor,
-        observacao
-      } = req.body;
+        observacao,
+      } = req.body || {};
 
       console.log('======================================');
       console.log('DADOS DESPESA:', req.body);
@@ -33,13 +36,13 @@ router.post(
       // MOTORISTA
       // ==================================================
 
-      const motoristaId = req.usuario.motorista_id;
+      const motoristaId = req.usuario?.motorista_id;
 
       if (!motoristaId) {
         return res.status(400).json({
           sucesso: false,
           mensagem:
-            'Este utilizador não está associado a um motorista.'
+            'Este utilizador não está associado a um motorista.',
         });
       }
 
@@ -51,7 +54,7 @@ router.post(
         return res.status(400).json({
           sucesso: false,
           mensagem:
-            'É obrigatório enviar uma foto do comprovativo da despesa.'
+            'É obrigatório enviar uma foto do comprovativo da despesa.',
         });
       }
 
@@ -62,7 +65,7 @@ router.post(
       if (!categoria || categoria.trim() === '') {
         return res.status(400).json({
           sucesso: false,
-          mensagem: 'Informe a categoria da despesa.'
+          mensagem: 'Informe a categoria da despesa.',
         });
       }
 
@@ -75,7 +78,7 @@ router.post(
       if (!Number.isFinite(valorNumerico) || valorNumerico <= 0) {
         return res.status(400).json({
           sucesso: false,
-          mensagem: 'O valor da despesa é inválido.'
+          mensagem: 'O valor da despesa é inválido.',
         });
       }
 
@@ -102,21 +105,20 @@ router.post(
         return res.status(404).json({
           sucesso: false,
           mensagem:
-            'Motorista não encontrado ou está desativado.'
+            'Motorista não encontrado ou está desativado.',
         });
       }
 
       // ==================================================
-      // URL DO COMPROVATIVO
+      // URL DA FOTO
       // ==================================================
 
       const comprovativoUrl = req.file.path;
 
       if (!comprovativoUrl) {
-        return res.status(400).json({
+        return res.status(500).json({
           sucesso: false,
-          mensagem:
-            'Não foi possível obter o endereço da imagem.'
+          mensagem: 'Não foi possível obter a URL do comprovativo.',
         });
       }
 
@@ -143,7 +145,7 @@ router.post(
           categoria.trim(),
           valorNumerico,
           observacao?.trim() || null,
-          comprovativoUrl
+          comprovativoUrl,
         ]
       );
 
@@ -161,8 +163,8 @@ router.post(
           categoria: categoria.trim(),
           valor: valorNumerico,
           observacao: observacao?.trim() || null,
-          comprovativo_url: comprovativoUrl
-        }
+          comprovativo_url: comprovativoUrl,
+        },
       });
 
     } catch (error) {
@@ -174,7 +176,7 @@ router.post(
       return res.status(500).json({
         sucesso: false,
         mensagem: 'Erro ao registrar despesa.',
-        erro: error.message
+        erro: error.message,
       });
     }
   }
@@ -187,23 +189,21 @@ router.post(
 
 router.get('/minhas', autenticar, async (req, res) => {
   try {
-    const motoristaId = req.usuario.motorista_id;
+    const motoristaId = req.usuario?.motorista_id;
     const periodo = req.query.periodo || 'tudo';
 
     if (!motoristaId) {
       return res.status(400).json({
         sucesso: false,
         mensagem:
-          'Este utilizador não está associado a um motorista.'
+          'Este utilizador não está associado a um motorista.',
       });
     }
 
     let filtro = '';
 
     if (periodo === 'hoje') {
-      filtro = `
-        AND DATE(data) = CURDATE()
-      `;
+      filtro = 'AND DATE(data) = CURDATE()';
     }
 
     if (periodo === 'mes') {
@@ -235,7 +235,7 @@ router.get('/minhas', autenticar, async (req, res) => {
     return res.json({
       sucesso: true,
       periodo,
-      despesas
+      despesas,
     });
 
   } catch (error) {
@@ -247,7 +247,7 @@ router.get('/minhas', autenticar, async (req, res) => {
     return res.status(500).json({
       sucesso: false,
       mensagem: 'Erro ao listar despesas.',
-      erro: error.message
+      erro: error.message,
     });
   }
 });
@@ -280,7 +280,7 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
 
     return res.json({
       sucesso: true,
-      despesas
+      despesas,
     });
 
   } catch (error) {
@@ -292,7 +292,7 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
     return res.status(500).json({
       sucesso: false,
       mensagem: 'Erro ao listar despesas.',
-      erro: error.message
+      erro: error.message,
     });
   }
 });
