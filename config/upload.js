@@ -4,6 +4,7 @@ const cloudinary = require('./cloudinary');
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
+
   params: {
     folder: 'controle-motoristas/comprovativos',
     allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
@@ -14,8 +15,8 @@ const storage = new CloudinaryStorage({
 const upload = multer({
   storage: storage,
   limits: {
-  fileSize: 15 * 1024 * 1024,
-},
+    fileSize: 15 * 1024 * 1024,
+  },
 });
 
 module.exports = upload;
