@@ -2,6 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const { autenticar, somenteAdmin } = require('../middleware/auth');
 const upload = require('../config/upload');
+
 const router = express.Router();
 
 
@@ -22,9 +23,11 @@ router.post(
         observacao
       } = req.body;
 
+      console.log('======================================');
       console.log('DADOS DESPESA:', req.body);
       console.log('ARQUIVO:', req.file);
       console.log('USUARIO:', req.usuario);
+      console.log('======================================');
 
       // ==================================================
       // MOTORISTA
@@ -104,10 +107,18 @@ router.post(
       }
 
       // ==================================================
-      // URL DA FOTO NO CLOUDINARY
+      // URL DO COMPROVATIVO
       // ==================================================
 
       const comprovativoUrl = req.file.path;
+
+      if (!comprovativoUrl) {
+        return res.status(400).json({
+          sucesso: false,
+          mensagem:
+            'Não foi possível obter o endereço da imagem.'
+        });
+      }
 
       // ==================================================
       // INSERIR DESPESA
@@ -169,69 +180,78 @@ router.post(
   }
 );
 
+
 // ======================================================
 // MINHAS DESPESAS - MOTORISTA
 // ======================================================
 
 router.get('/minhas', autenticar, async (req, res) => {
-    try {
-        const motoristaId = req.usuario.motorista_id;
-        const periodo = req.query.periodo || 'tudo';
+  try {
+    const motoristaId = req.usuario.motorista_id;
+    const periodo = req.query.periodo || 'tudo';
 
-        if (!motoristaId) {
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: 'Este utilizador não está associado a um motorista.'
-            });
-        }
-
-        let filtro = '';
-
-        if (periodo === 'hoje') {
-            filtro = 'AND DATE(data) = CURDATE()';
-        }
-
-        if (periodo === 'mes') {
-            filtro = `
-                AND YEAR(data) = YEAR(CURDATE())
-                AND MONTH(data) = MONTH(CURDATE())
-            `;
-        }
-
-        const [despesas] = await pool.query(
-            `
-            SELECT
-                id,
-                motorista_id,
-                data,
-                categoria,
-                valor,
-                observacao,
-                created_at
-            FROM despesas
-            WHERE motorista_id = ?
-            ${filtro}
-            ORDER BY data DESC, id DESC
-            `,
-            [motoristaId]
-        );
-
-        return res.json({
-            sucesso: true,
-            periodo,
-            despesas
-        });
-
-    } catch (error) {
-        console.error('ERRO AO LISTAR DESPESAS:', error);
-
-        return res.status(500).json({
-            sucesso: false,
-            mensagem: 'Erro ao listar despesas.',
-            erro: error.message
-        });
+    if (!motoristaId) {
+      return res.status(400).json({
+        sucesso: false,
+        mensagem:
+          'Este utilizador não está associado a um motorista.'
+      });
     }
+
+    let filtro = '';
+
+    if (periodo === 'hoje') {
+      filtro = `
+        AND DATE(data) = CURDATE()
+      `;
+    }
+
+    if (periodo === 'mes') {
+      filtro = `
+        AND YEAR(data) = YEAR(CURDATE())
+        AND MONTH(data) = MONTH(CURDATE())
+      `;
+    }
+
+    const [despesas] = await pool.query(
+      `
+      SELECT
+        id,
+        motorista_id,
+        data,
+        categoria,
+        valor,
+        observacao,
+        comprovativo_url,
+        created_at
+      FROM despesas
+      WHERE motorista_id = ?
+      ${filtro}
+      ORDER BY data DESC, id DESC
+      `,
+      [motoristaId]
+    );
+
+    return res.json({
+      sucesso: true,
+      periodo,
+      despesas
+    });
+
+  } catch (error) {
+    console.error(
+      'ERRO AO LISTAR DESPESAS:',
+      error
+    );
+
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: 'Erro ao listar despesas.',
+      erro: error.message
+    });
+  }
 });
+
 
 // ======================================================
 // TODAS AS DESPESAS - ADMIN
@@ -249,8 +269,8 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
         d.categoria,
         d.valor,
         d.observacao,
-        d.created_at
         d.comprovativo_url,
+        d.created_at
       FROM despesas d
       INNER JOIN motoristas m
         ON m.id = d.motorista_id
@@ -264,7 +284,10 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('ERRO AO LISTAR DESPESAS ADMIN:', error);
+    console.error(
+      'ERRO AO LISTAR DESPESAS ADMIN:',
+      error
+    );
 
     return res.status(500).json({
       sucesso: false,

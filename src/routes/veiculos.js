@@ -38,6 +38,47 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
   }
 });
 
+// BUSCAR VEÍCULO
+router.get('/:id', autenticar, somenteAdmin, async (req, res) => {
+  try {
+    const [veiculos] = await pool.query(`
+      SELECT
+        v.id,
+        v.marca,
+        v.modelo,
+        v.matricula,
+        v.ano,
+        v.motorista_id,
+        v.ativo,
+        v.created_at,
+        m.nome AS motorista_nome
+      FROM veiculos v
+      LEFT JOIN motoristas m ON m.id = v.motorista_id
+      WHERE v.id = ?
+    `, [req.params.id]);
+
+    if (veiculos.length === 0) {
+      return res.status(404).json({
+        sucesso: false,
+        mensagem: 'Veículo não encontrado.'
+      });
+    }
+
+    res.json({
+      sucesso: true,
+      veiculo: veiculos[0]
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      sucesso: false,
+      mensagem: 'Erro ao buscar veículo.',
+      erro: error.message
+    });
+  }
+});
+
 // CADASTRAR VEÍCULO
 router.post('/', autenticar, somenteAdmin, async (req, res) => {
   try {
@@ -56,27 +97,23 @@ router.post('/', autenticar, somenteAdmin, async (req, res) => {
       });
     }
 
-    const [resultado] = await pool.query(
-      `
+    const [resultado] = await pool.query(`
       INSERT INTO veiculos
-      (marca, modelo, matricula, ano, motorista_id)
+        (marca, modelo, matricula, ano, motorista_id)
       VALUES (?, ?, ?, ?, ?)
-      `,
-      [
-        marca,
-        modelo,
-        matricula,
-        ano || null,
-        motorista_id || null
-      ]
-    );
+    `, [
+      marca,
+      modelo,
+      matricula,
+      ano || null,
+      motorista_id || null
+    ]);
 
     res.status(201).json({
       sucesso: true,
       mensagem: 'Veículo cadastrado com sucesso.',
       veiculo_id: resultado.insertId
     });
-
   } catch (error) {
     console.error(error);
 
@@ -98,8 +135,6 @@ router.post('/', autenticar, somenteAdmin, async (req, res) => {
 // EDITAR VEÍCULO
 router.put('/:id', autenticar, somenteAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
-
     const {
       marca,
       modelo,
@@ -115,8 +150,7 @@ router.put('/:id', autenticar, somenteAdmin, async (req, res) => {
       });
     }
 
-    const [resultado] = await pool.query(
-      `
+    const [resultado] = await pool.query(`
       UPDATE veiculos
       SET
         marca = ?,
@@ -125,16 +159,14 @@ router.put('/:id', autenticar, somenteAdmin, async (req, res) => {
         ano = ?,
         motorista_id = ?
       WHERE id = ?
-      `,
-      [
-        marca,
-        modelo,
-        matricula,
-        ano || null,
-        motorista_id || null,
-        id
-      ]
-    );
+    `, [
+      marca,
+      modelo,
+      matricula,
+      ano || null,
+      motorista_id || null,
+      req.params.id
+    ]);
 
     if (resultado.affectedRows === 0) {
       return res.status(404).json({
@@ -147,7 +179,6 @@ router.put('/:id', autenticar, somenteAdmin, async (req, res) => {
       sucesso: true,
       mensagem: 'Veículo atualizado com sucesso.'
     });
-
   } catch (error) {
     console.error(error);
 
@@ -166,19 +197,14 @@ router.put('/:id', autenticar, somenteAdmin, async (req, res) => {
   }
 });
 
-// DESATIVAR VEÍCULO
+// DESATIVAR
 router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const [resultado] = await pool.query(
-      `
+    const [resultado] = await pool.query(`
       UPDATE veiculos
       SET ativo = 0
       WHERE id = ?
-      `,
-      [id]
-    );
+    `, [req.params.id]);
 
     if (resultado.affectedRows === 0) {
       return res.status(404).json({
@@ -191,7 +217,6 @@ router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
       sucesso: true,
       mensagem: 'Veículo desativado com sucesso.'
     });
-
   } catch (error) {
     console.error(error);
 
@@ -203,19 +228,14 @@ router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
   }
 });
 
-// REATIVAR VEÍCULO
+// REATIVAR
 router.patch('/:id/ativar', autenticar, somenteAdmin, async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const [resultado] = await pool.query(
-      `
+    const [resultado] = await pool.query(`
       UPDATE veiculos
       SET ativo = 1
       WHERE id = ?
-      `,
-      [id]
-    );
+    `, [req.params.id]);
 
     if (resultado.affectedRows === 0) {
       return res.status(404).json({
@@ -228,7 +248,6 @@ router.patch('/:id/ativar', autenticar, somenteAdmin, async (req, res) => {
       sucesso: true,
       mensagem: 'Veículo reativado com sucesso.'
     });
-
   } catch (error) {
     console.error(error);
 
