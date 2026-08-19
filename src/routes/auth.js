@@ -486,4 +486,156 @@ router.put('/senha', autenticar, async (req, res) => {
     }
 });
 
+// ======================================================
+// OBTER PERFIL DO UTILIZADOR AUTENTICADO
+// ======================================================
+
+router.get('/perfil', autenticar, async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id;
+
+        const [usuarios] = await pool.query(
+            `
+            SELECT
+                id,
+                nome,
+                telefone,
+                email,
+                tipo,
+                motorista_id,
+                ativo,
+                notificacoes,
+                modo_escuro,
+                created_at
+            FROM usuarios
+            WHERE id = ?
+            LIMIT 1
+            `,
+            [usuarioId]
+        );
+
+        if (usuarios.length === 0) {
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Utilizador não encontrado.'
+            });
+        }
+
+        return res.json({
+            sucesso: true,
+            usuario: usuarios[0]
+        });
+
+    } catch (error) {
+        console.error('ERRO AO OBTER PERFIL:', error);
+
+        return res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao carregar perfil.',
+            erro: error.message
+        });
+    }
+});
+
+
+// ======================================================
+// ATUALIZAR PERFIL
+// ======================================================
+
+router.put('/perfil', autenticar, async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id;
+        const { nome } = req.body;
+
+        if (!nome || !nome.trim()) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'O nome é obrigatório.'
+            });
+        }
+
+        const nomeLimpo = nome.trim();
+
+        await pool.query(
+            `
+            UPDATE usuarios
+            SET nome = ?
+            WHERE id = ?
+            `,
+            [nomeLimpo, usuarioId]
+        );
+
+        return res.json({
+            sucesso: true,
+            mensagem: 'Perfil atualizado com sucesso.',
+            nome: nomeLimpo
+        });
+
+    } catch (error) {
+        console.error('ERRO AO ATUALIZAR PERFIL:', error);
+
+        return res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao atualizar perfil.',
+            erro: error.message
+        });
+    }
+});
+
+
+// ======================================================
+// ATUALIZAR PREFERÊNCIAS
+// ======================================================
+
+router.put('/preferencias', autenticar, async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id;
+
+        const { notificacoes, modo_escuro } = req.body;
+
+        if (
+            typeof notificacoes !== 'boolean' ||
+            typeof modo_escuro !== 'boolean'
+        ) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Preferências inválidas.'
+            });
+        }
+
+        await pool.query(
+            `
+            UPDATE usuarios
+            SET
+                notificacoes = ?,
+                modo_escuro = ?
+            WHERE id = ?
+            `,
+            [
+                notificacoes ? 1 : 0,
+                modo_escuro ? 1 : 0,
+                usuarioId
+            ]
+        );
+
+        return res.json({
+            sucesso: true,
+            mensagem: 'Preferências atualizadas com sucesso.',
+            preferencias: {
+                notificacoes,
+                modo_escuro
+            }
+        });
+
+    } catch (error) {
+        console.error('ERRO AO ATUALIZAR PREFERÊNCIAS:', error);
+
+        return res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao atualizar preferências.',
+            erro: error.message
+        });
+    }
+});
+
 module.exports = router;
