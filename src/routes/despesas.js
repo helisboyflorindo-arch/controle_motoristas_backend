@@ -298,4 +298,153 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
 });
 
 
+// ======================================================
+// EDITAR DESPESA - ADMIN
+// ======================================================
+
+router.put(
+  '/:id',
+  autenticar,
+  somenteAdmin,
+  upload.single('comprovativo'),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const {
+        data,
+        categoria,
+        valor,
+        observacao,
+      } = req.body || {};
+
+      if (!categoria || categoria.trim() === '') {
+        return res.status(400).json({
+          sucesso: false,
+          mensagem: 'Informe a categoria da despesa.',
+        });
+      }
+
+      const valorNumerico = Number(valor);
+
+      if (!Number.isFinite(valorNumerico) || valorNumerico <= 0) {
+        return res.status(400).json({
+          sucesso: false,
+          mensagem: 'O valor da despesa é inválido.',
+        });
+      }
+
+      // Verificar se existe
+      const [despesas] = await pool.query(
+        `
+        SELECT id, comprovativo_url
+        FROM despesas
+        WHERE id = ?
+        `,
+        [id]
+      );
+
+      if (despesas.length === 0) {
+        return res.status(404).json({
+          sucesso: false,
+          mensagem: 'Despesa não encontrada.',
+        });
+      }
+
+      // Mantém o comprovativo antigo se não for enviado outro
+      let comprovativoUrl = despesas[0].comprovativo_url;
+
+      if (req.file && req.file.path) {
+        comprovativoUrl = req.file.path;
+      }
+
+      await pool.query(
+        `
+        UPDATE despesas
+        SET
+          data = ?,
+          categoria = ?,
+          valor = ?,
+          observacao = ?,
+          comprovativo_url = ?
+        WHERE id = ?
+        `,
+        [
+          data || new Date(),
+          categoria.trim(),
+          valorNumerico,
+          observacao?.trim() || null,
+          comprovativoUrl,
+          id,
+        ]
+      );
+
+      return res.json({
+        sucesso: true,
+        mensagem: 'Despesa atualizada com sucesso.',
+      });
+
+    } catch (error) {
+      console.error(
+        'ERRO AO ATUALIZAR DESPESA:',
+        error
+      );
+
+      return res.status(500).json({
+        sucesso: false,
+        mensagem: 'Erro ao atualizar despesa.',
+        erro: error.message,
+      });
+    }
+  }
+);
+
+
+// ======================================================
+// EXCLUIR DESPESA - ADMIN
+// ======================================================
+
+router.delete(
+  '/:id',
+  autenticar,
+  somenteAdmin,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const [resultado] = await pool.query(
+        `
+        DELETE FROM despesas
+        WHERE id = ?
+        `,
+        [id]
+      );
+
+      if (resultado.affectedRows === 0) {
+        return res.status(404).json({
+          sucesso: false,
+          mensagem: 'Despesa não encontrada.',
+        });
+      }
+
+      return res.json({
+        sucesso: true,
+        mensagem: 'Despesa excluída com sucesso.',
+      });
+
+    } catch (error) {
+      console.error(
+        'ERRO AO EXCLUIR DESPESA:',
+        error
+      );
+
+      return res.status(500).json({
+        sucesso: false,
+        mensagem: 'Erro ao excluir despesa.',
+        erro: error.message,
+      });
+    }
+  }
+);
+
 module.exports = router;

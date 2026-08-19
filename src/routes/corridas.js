@@ -402,7 +402,7 @@ router.get('/:id', autenticar, async (req, res) => {
 // EDITAR CORRIDA
 // ======================================================
 
-router.put('/:id', autenticar, async (req, res) => {
+router.put('/:id', autenticar, somenteAdmin, async (req, res) => {
     try {
         const { id } = req.params;
 
@@ -532,7 +532,7 @@ router.put('/:id', autenticar, async (req, res) => {
 // EXCLUIR CORRIDA
 // ======================================================
 
-router.delete('/:id', autenticar, async (req, res) => {
+router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
     try {
         const { id } = req.params;
 
