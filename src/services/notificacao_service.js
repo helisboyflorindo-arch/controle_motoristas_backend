@@ -5,6 +5,12 @@ async function enviarNotificacao(token, titulo, mensagem) {
 
     try {
 
+        console.log("==============================");
+        console.log("TOKEN RECEBIDO:");
+        console.log(token);
+        console.log("==============================");
+
+
         const resposta = await messaging.send({
 
             token: token,
@@ -17,24 +23,16 @@ async function enviarNotificacao(token, titulo, mensagem) {
         });
 
 
-        console.log(
-            'Notificação enviada:',
-            resposta
-        );
-
+        console.log("NOTIFICAÇÃO ENVIADA:", resposta);
 
         return resposta;
 
 
-    } catch (error) {
+    } catch(error) {
 
-        console.error(
-            'Erro Firebase Notification:',
-            error
-        );
+        console.error("ERRO FIREBASE:", error);
 
         throw error;
-
     }
 
 }
