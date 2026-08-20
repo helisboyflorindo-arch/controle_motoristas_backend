@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const { getMessaging } = require('firebase-admin/messaging');
 
 
 let serviceAccount;
@@ -12,7 +13,6 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 
     serviceAccount.private_key =
         serviceAccount.private_key.replace(/\\n/g, '\n');
-
 
 } else {
 
@@ -32,5 +32,5 @@ if (admin.getApps().length === 0) {
 
 module.exports = {
     admin,
-    messaging: admin.messaging()
+    messaging: getMessaging()
 };
