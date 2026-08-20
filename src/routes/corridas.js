@@ -98,26 +98,26 @@ router.post('/', autenticar, async (req, res) => {
                 observacao || null
             ]
         );
-        await notificarAdmins(
-    'Nova despesa',
-    `O motorista ${nome} registou uma despesa de ${valorNumerico} Kz`
+     await notificarAdmins(
+    'Nova corrida registada',
+    `${req.usuario.nome} registou uma nova corrida`
 );
 
-        return res.status(201).json({
-            sucesso: true,
-            mensagem: 'Corrida registrada com sucesso.',
-            corrida: {
-                id: resultado.insertId,
-                motorista_id: motoristaId,
-                data_corrida: dataFinal,
-                quantidade: quantidadeNumerica,
-                valor: valorNumerico,
-                valor_total: valorTotal,
-                local_partida: origem,
-                local_termino: destino,
-                observacao: observacao || null
-            }
-        });
+return res.status(201).json({
+    sucesso: true,
+    mensagem: 'Corrida registrada com sucesso.',
+    corrida: {
+        id: resultado.insertId,
+        motorista_id: motoristaId,
+        data_corrida: dataFinal,
+        quantidade: quantidadeNumerica,
+        valor: valorNumerico,
+        valor_total: valorTotal,
+        local_partida: origem,
+        local_termino: destino,
+        observacao: observacao || null
+    }
+});
 
     } catch (error) {
         console.error('Erro ao registrar corrida:', error);
