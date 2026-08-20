@@ -296,50 +296,120 @@ router.get('/minhas', autenticar, async (req, res) => {
 });
 
 
-// ======================================================
-// TODAS AS DESPESAS - ADMIN
-// ======================================================
+// =====================================================
+// LISTAR DESPESAS - ADMIN COM FILTRO DE DATA
+// =====================================================
 
-router.get('/', autenticar, somenteAdmin, async (req, res) => {
-  try {
-   const [despesas] = await pool.query(
-`
-SELECT
-  d.id,
-  d.motorista_id,
-  m.nome AS motorista,
-  d.data,
-  d.categoria,
-  d.valor,
-  d.observacao,
-  d.comprovativo_url,
-  d.status,
-  d.created_at
-FROM despesas d
-INNER JOIN motoristas m
-ON m.id = d.motorista_id
-ORDER BY d.data DESC, d.id DESC
-`
+router.get(
+  '/',
+  autenticar,
+  somenteAdmin,
+  async (req, res) => {
+
+    try {
+
+      const {
+        inicio,
+        fim
+      } = req.query;
+
+
+      let sql = `
+        SELECT
+          d.id,
+          d.motorista_id,
+          u.nome AS motorista,
+          d.data,
+          d.categoria,
+          d.valor,
+          d.observacao,
+          d.comprovativo_url,
+          d.status,
+          d.created_at
+
+        FROM despesas d
+
+        INNER JOIN usuarios u
+          ON u.motorista_id = d.motorista_id
+
+        WHERE 1 = 1
+      `;
+
+
+      const valores = [];
+
+
+      // ==============================================
+      // FILTRO POR DATA
+      // ==============================================
+
+      if (inicio && fim) {
+
+        sql += `
+          AND DATE(d.data) BETWEEN ? AND ?
+        `;
+
+        valores.push(
+          inicio,
+          fim
+        );
+
+      } else if (inicio) {
+
+        sql += `
+          AND DATE(d.data) >= ?
+        `;
+
+        valores.push(inicio);
+
+      } else if (fim) {
+
+        sql += `
+          AND DATE(d.data) <= ?
+        `;
+
+        valores.push(fim);
+
+      }
+
+
+      sql += `
+        ORDER BY d.data DESC, d.id DESC
+      `;
+
+
+      const [despesas] = await pool.query(
+        sql,
+        valores
+      );
+
+
+      return res.json({
+        sucesso: true,
+        despesas
+      });
+
+
+    } catch (error) {
+
+      console.error(
+        'ERRO AO LISTAR DESPESAS ADMIN:',
+        error
+      );
+
+
+      return res.status(500).json({
+        sucesso: false,
+        mensagem: 'Erro ao listar despesas.',
+        erro: error.message
+      });
+
+    }
+
+  }
 );
 
-    return res.json({
-      sucesso: true,
-      despesas,
-    });
 
-  } catch (error) {
-    console.error(
-      'ERRO AO LISTAR DESPESAS ADMIN:',
-      error
-    );
-
-    return res.status(500).json({
-      sucesso: false,
-      mensagem: 'Erro ao listar despesas.',
-      erro: error.message,
-    });
-  }
-});
 
 
 // ======================================================
