@@ -3,37 +3,22 @@ const { messaging } = require('../config/firebase');
 
 async function enviarNotificacao(token, titulo, mensagem) {
 
-    try {
-
-        console.log("==============================");
-        console.log("TOKEN RECEBIDO:");
-        console.log(token);
-        console.log("==============================");
+    console.log("==============================");
+    console.log("TOKEN RECEBIDO:");
+    console.log(token);
+    console.log("==============================");
 
 
-        const resposta = await messaging.send({
+    return await messaging.send({
 
-            token: token,
+        token: token,
 
-            notification: {
-                title: titulo,
-                body: mensagem
-            }
+        notification:{
+            title: titulo,
+            body: mensagem
+        }
 
-        });
-
-
-        console.log("NOTIFICAÇÃO ENVIADA:", resposta);
-
-        return resposta;
-
-
-    } catch(error) {
-
-        console.error("ERRO FIREBASE:", error);
-
-        throw error;
-    }
+    });
 
 }
 

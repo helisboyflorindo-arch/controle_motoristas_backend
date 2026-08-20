@@ -59,22 +59,28 @@ app.post('/api/teste-notificacao', async (req, res) => {
 
     try {
 
-        const { token } = req.body;
+        const {
+            token,
+            titulo,
+            mensagem
+        } = req.body;
 
-        await enviarNotificacao({
-            token: token,
-            titulo: 'Teste Controle Motoristas',
-            mensagem: 'A notificação está funcionando! 🚗',
-        });
+
+        const resultado = await enviarNotificacao(
+            token,
+            titulo,
+            mensagem
+        );
 
 
         res.json({
             sucesso: true,
-            mensagem: 'Notificação enviada'
+            mensagem: 'Notificação enviada',
+            resultado
         });
 
 
-    } catch(error){
+    } catch(error) {
 
         console.error(error);
 
