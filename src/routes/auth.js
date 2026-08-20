@@ -726,4 +726,45 @@ router.post('/fcm-token', autenticar, async (req, res) => {
     }
 });
 
+// ======================================================
+// SALVAR FCM TOKEN
+// ======================================================
+
+router.put('/fcm-token', autenticar, async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id;
+        const { fcm_token } = req.body;
+
+        if (!fcm_token || !fcm_token.trim()) {
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'FCM token é obrigatório.'
+            });
+        }
+
+        await pool.query(
+            `
+            UPDATE usuarios
+            SET fcm_token = ?
+            WHERE id = ?
+            `,
+            [fcm_token.trim(), usuarioId]
+        );
+
+        return res.json({
+            sucesso: true,
+            mensagem: 'FCM token salvo com sucesso.'
+        });
+
+    } catch (error) {
+        console.error('ERRO AO SALVAR FCM TOKEN:', error);
+
+        return res.status(500).json({
+            sucesso: false,
+            mensagem: 'Erro ao salvar FCM token.',
+            erro: error.message
+        });
+    }
+});
+
 module.exports = router;
