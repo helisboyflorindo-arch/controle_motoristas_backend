@@ -309,7 +309,14 @@ router.get('/resumo', autenticar, async (req, res) => {
         const [gastos] = await pool.query(
             `
             SELECT
-                COALESCE(SUM(valor), 0) AS total_gasto
+                COALESCE(
+  SUM(
+    CASE 
+      WHEN status = 'aprovada' THEN valor
+      ELSE 0
+    END
+  ),
+0) AS total_gasto
             FROM despesas
             WHERE motorista_id = ?
             ${filtroDespesa}

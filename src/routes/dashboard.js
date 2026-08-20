@@ -224,7 +224,14 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
         `
         SELECT
           COUNT(*) AS total_despesas,
-          COALESCE(SUM(valor), 0) AS despesas
+        COALESCE(
+  SUM(
+    CASE 
+      WHEN status = 'aprovada' THEN valor
+      ELSE 0
+    END
+  ), 
+0) AS despesas
         FROM despesas
         WHERE DATE(data)
           BETWEEN ? AND ?
@@ -304,7 +311,14 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
           `
           SELECT
             COUNT(*) AS total_corridas,
-            COALESCE(SUM(valor_total), 0)
+           COALESCE(
+  SUM(
+    CASE 
+      WHEN status = 'aprovada' THEN valor
+      ELSE 0
+    END
+  ),
+0)
               AS receita
           FROM corridas
           WHERE motorista_id = ?
@@ -329,8 +343,14 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
           `
           SELECT
             COUNT(*) AS total_despesas,
-            COALESCE(SUM(valor), 0)
-              AS despesas
+            COALESCE(
+  SUM(
+    CASE 
+      WHEN status = 'aprovada' THEN valor
+      ELSE 0
+    END
+  ),
+0) AS despesas
           FROM despesas
           WHERE motorista_id = ?
             AND DATE(data)
@@ -424,7 +444,12 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
             ) AS periodo,
 
             COALESCE(
-              SUM(valor_total),
+             SUM(
+  CASE 
+    WHEN status = 'aprovada' THEN valor
+    ELSE 0
+  END
+)
               0
             ) AS receita
 
@@ -456,9 +481,13 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
             `
             SELECT
               COALESCE(
-                SUM(valor),
-                0
-              ) AS despesas
+  SUM(
+    CASE 
+      WHEN status = 'aprovada' THEN valor
+      ELSE 0
+    END
+  ),
+0) AS despesas
 
             FROM despesas
 

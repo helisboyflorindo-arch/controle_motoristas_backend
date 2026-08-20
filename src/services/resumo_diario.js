@@ -18,14 +18,15 @@ async function enviarResumoDiario() {
         );
 
 
-        // Despesas do dia
-        const [despesas] = await pool.query(
-            `
-            SELECT COUNT(*) AS total
-            FROM despesas
-            WHERE DATE(created_at) = CURDATE()
-            `
-        );
+       // Despesas aprovadas do dia
+const [despesas] = await pool.query(
+    `
+    SELECT COUNT(*) AS total
+    FROM despesas
+    WHERE DATE(created_at) = CURDATE()
+    AND status = 'aprovada'
+    `
+);
 
 
         // Buscar admins
