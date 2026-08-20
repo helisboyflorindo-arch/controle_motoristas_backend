@@ -3,7 +3,7 @@ const pool = require('../db');
 const { autenticar, somenteAdmin } = require('../middleware/auth');
 const upload = require('../config/upload');
 const { notificarAdmins } = require('../services/notificar_admins');
-
+const { enviarNotificacao } = require('../services/notificacao_service');
 const router = express.Router();
 
 // ======================================================
@@ -128,16 +128,17 @@ router.post(
 
       const [resultado] = await pool.query(
     `
-    INSERT INTO despesas
-    (
-      motorista_id,
-      data,
-      categoria,
-      valor,
-      observacao,
-      comprovativo_url
-    )
-    VALUES (?, ?, ?, ?, ?, ?)
+   INSERT INTO despesas
+(
+  motorista_id,
+  data,
+  categoria,
+  valor,
+  observacao,
+  comprovativo_url,
+  status
+)
+VALUES (?, ?, ?, ?, ?, ?, 'pendente')
     `,
     [
       motoristaId,
@@ -493,6 +494,331 @@ router.delete(
         erro: error.message,
       });
     }
+  }
+);
+
+// ======================================================
+// APROVAR DESPESA - ADMIN
+// ======================================================
+
+router.put(
+  '/aprovar/:id',
+  autenticar,
+  somenteAdmin,
+  async (req, res) => {
+
+    try {
+
+      const { id } = req.params;
+
+
+      // Aprovar despesa
+      const [resultado] = await pool.query(
+        `
+        UPDATE despesas
+        SET status = 'aprovada'
+        WHERE id = ?
+        `,
+        [id]
+      );
+
+
+      if (resultado.affectedRows === 0) {
+        return res.status(404).json({
+          sucesso:false,
+          mensagem:'Despesa não encontrada.'
+        });
+      }
+
+
+      // Buscar motorista + token
+      const [dados] = await pool.query(
+        `
+        SELECT 
+            u.nome,
+            u.fcm_token,
+            d.valor,
+            d.categoria
+        FROM despesas d
+        INNER JOIN usuarios u
+            ON u.motorista_id = d.motorista_id
+        WHERE d.id = ?
+        `,
+        [id]
+      );
+
+
+      // Enviar notificação
+      if (
+        dados.length > 0 &&
+        dados[0].fcm_token
+      ) {
+
+        await enviarNotificacao(
+          dados[0].fcm_token,
+          'Despesa aprovada ✅',
+          `A sua despesa de ${dados[0].categoria} no valor de ${dados[0].valor} Kz foi aprovada.`
+        );
+
+      }
+
+
+      res.json({
+        sucesso:true,
+        mensagem:'Despesa aprovada com sucesso.'
+      });
+
+
+    } catch(error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        sucesso:false,
+        erro:error.message
+      });
+
+    }
+
+  }
+);
+
+// ======================================================
+// REJEITAR DESPESA - ADMIN
+// ======================================================
+
+router.put(
+'/rejeitar/:id',
+autenticar,
+somenteAdmin,
+async(req,res)=>{
+
+    try{
+
+        const {id}=req.params;
+
+
+        await pool.query(
+        `
+        UPDATE despesas
+        SET status='rejeitada'
+        WHERE id=?
+        `,
+        [id]
+        );
+
+
+        res.json({
+            sucesso:true,
+            mensagem:'Despesa rejeitada.'
+        });
+
+
+    }catch(error){
+
+        res.status(500).json({
+            sucesso:false,
+            erro:error.message
+        });
+
+    }
+
+});
+
+// ======================================================
+// APROVAR DESPESA - ADMIN
+// ======================================================
+
+router.put(
+    '/aprovar/:id',
+    autenticar,
+    somenteAdmin,
+    async (req, res) => {
+
+        try {
+
+            const { id } = req.params;
+
+
+            const [resultado] = await pool.query(
+                `
+                UPDATE despesas
+                SET status = 'aprovada'
+                WHERE id = ?
+                `,
+                [id]
+            );
+
+
+            if (resultado.affectedRows === 0) {
+                return res.status(404).json({
+                    sucesso:false,
+                    mensagem:'Despesa não encontrada.'
+                });
+            }
+
+
+            return res.json({
+                sucesso:true,
+                mensagem:'Despesa aprovada com sucesso.'
+            });
+
+
+        } catch(error) {
+
+            console.error(
+                'ERRO AO APROVAR DESPESA:',
+                error
+            );
+
+
+            return res.status(500).json({
+                sucesso:false,
+                mensagem:'Erro ao aprovar despesa.',
+                erro:error.message
+            });
+
+        }
+
+    }
+);
+
+// ======================================================
+// REJEITAR DESPESA - ADMIN
+// ======================================================
+
+router.put(
+    '/rejeitar/:id',
+    autenticar,
+    somenteAdmin,
+    async (req, res) => {
+
+        try {
+
+            const { id } = req.params;
+
+
+            const [resultado] = await pool.query(
+                `
+                UPDATE despesas
+                SET status = 'rejeitada'
+                WHERE id = ?
+                `,
+                [id]
+            );
+
+
+            if (resultado.affectedRows === 0) {
+                return res.status(404).json({
+                    sucesso:false,
+                    mensagem:'Despesa não encontrada.'
+                });
+            }
+
+
+            return res.json({
+                sucesso:true,
+                mensagem:'Despesa rejeitada.'
+            });
+
+
+        } catch(error) {
+
+            console.error(
+                'ERRO AO REJEITAR DESPESA:',
+                error
+            );
+
+
+            return res.status(500).json({
+                sucesso:false,
+                mensagem:'Erro ao rejeitar despesa.',
+                erro:error.message
+            });
+
+        }
+
+    }
+);
+
+router.put(
+  '/rejeitar/:id',
+  autenticar,
+  somenteAdmin,
+  async (req, res) => {
+
+    try {
+
+      const { id } = req.params;
+
+
+      // Rejeitar despesa
+      const [resultado] = await pool.query(
+        `
+        UPDATE despesas
+        SET status = 'rejeitada'
+        WHERE id = ?
+        `,
+        [id]
+      );
+
+
+      if (resultado.affectedRows === 0) {
+        return res.status(404).json({
+          sucesso:false,
+          mensagem:'Despesa não encontrada.'
+        });
+      }
+
+
+      // Buscar motorista + token
+      const [dados] = await pool.query(
+        `
+        SELECT 
+            u.fcm_token,
+            d.valor,
+            d.categoria
+        FROM despesas d
+        INNER JOIN usuarios u
+            ON u.motorista_id = d.motorista_id
+        WHERE d.id = ?
+        `,
+        [id]
+      );
+
+
+      // Enviar notificação
+      if (
+        dados.length > 0 &&
+        dados[0].fcm_token
+      ) {
+
+        await enviarNotificacao(
+          dados[0].fcm_token,
+          'Despesa rejeitada ❌',
+          `A sua despesa de ${dados[0].categoria} no valor de ${dados[0].valor} Kz foi rejeitada pelo administrador.`
+        );
+
+      }
+
+
+      res.json({
+        sucesso:true,
+        mensagem:'Despesa rejeitada com sucesso.'
+      });
+
+
+    } catch(error) {
+
+      console.error(error);
+
+      res.status(500).json({
+        sucesso:false,
+        erro:error.message
+      });
+
+    }
+
   }
 );
 

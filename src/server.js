@@ -11,6 +11,7 @@ const despesasRoutes = require('./routes/despesas');
 const dashboardRoutes = require('./routes/dashboard');
 const veiculosRoutes = require('./routes/veiculos');
 const { enviarNotificacao } = require('./services/notificacao_service');
+require('./services/resumo_diario');
 const app = express();
 
 app.use(cors());
