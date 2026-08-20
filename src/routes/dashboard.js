@@ -219,41 +219,57 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
     ======================================================
     */
 
-    const [[despesas]] =
-      await pool.query(
-        `
-        SELECT
-          COUNT(*) AS total_despesas,
-        COALESCE(
-  SUM(
-    CASE 
-      WHEN status = 'aprovada' THEN valor
-      ELSE 0
-    END
-  ), 
-0) AS despesas
-        FROM despesas
-        WHERE DATE(data)
-          BETWEEN ? AND ?
-        ${filtroMotoristaDespesa}
-        `,
-        parametrosDespesa
-      );
+    /*
+======================================================
+5. DESPESAS
+======================================================
+*/
 
-    const totalCorridas =
-      Number(arrecadacao.total_corridas || 0);
+const [[despesas]] =
+  await pool.query(
+    `
+    SELECT
+      COUNT(
+        CASE
+          WHEN status = 'aprovada' THEN 1
+        END
+      ) AS total_despesas,
 
-    const receitaTotal =
-      Number(arrecadacao.receita || 0);
+      COALESCE(
+        SUM(
+          CASE
+            WHEN status = 'aprovada' THEN valor
+            ELSE 0
+          END
+        ),
+        0
+      ) AS despesas
 
-    const totalDespesasRegistros =
-      Number(despesas.total_despesas || 0);
+    FROM despesas
 
-    const despesasTotal =
-      Number(despesas.despesas || 0);
+    WHERE DATE(data)
+      BETWEEN ? AND ?
 
-    const saldoGeral =
-      receitaTotal - despesasTotal;
+    ${filtroMotoristaDespesa}
+    `,
+    parametrosDespesa
+  );
+
+
+const totalCorridas =
+  Number(arrecadacao.total_corridas || 0);
+
+const receitaTotal =
+  Number(arrecadacao.receita || 0);
+
+const totalDespesasRegistros =
+  Number(despesas.total_despesas || 0);
+
+const despesasTotal =
+  Number(despesas.despesas || 0);
+
+const saldoGeral =
+  receitaTotal - despesasTotal;
 
     /*
     ======================================================
@@ -307,30 +323,29 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
       */
 
       const [[corridasMotorista]] =
-        await pool.query(
-          `
-          SELECT
-            COUNT(*) AS total_corridas,
-           COALESCE(
-  SUM(
-    CASE 
-      WHEN status = 'aprovada' THEN valor
-      ELSE 0
-    END
-  ),
-0)
-              AS receita
-          FROM corridas
-          WHERE motorista_id = ?
-            AND DATE(data_corrida)
-              BETWEEN ? AND ?
-          `,
-          [
-            motorista.id,
-            dataInicio,
-            dataFim
-          ]
-        );
+  await pool.query(
+    `
+    SELECT
+      COUNT(*) AS total_corridas,
+
+      COALESCE(
+        SUM(valor_total),
+        0
+      ) AS receita
+
+    FROM corridas
+
+    WHERE motorista_id = ?
+
+      AND DATE(data_corrida)
+        BETWEEN ? AND ?
+    `,
+    [
+      motorista.id,
+      dataInicio,
+      dataFim
+    ]
+  );
 
       /*
       ----------------------------------------------
@@ -338,31 +353,39 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
       ----------------------------------------------
       */
 
-      const [[despesasMotorista]] =
-        await pool.query(
-          `
-          SELECT
-            COUNT(*) AS total_despesas,
-          COALESCE(
-    SUM(
+     const [[despesasMotorista]] =
+  await pool.query(
+    `
+    SELECT
+      COUNT(
         CASE
+          WHEN status = 'aprovada' THEN 1
+        END
+      ) AS total_despesas,
+
+      COALESCE(
+        SUM(
+          CASE
             WHEN status = 'aprovada' THEN valor
             ELSE 0
-        END
-    ),
-0) AS despesas
-FROM despesas
-WHERE motorista_id = ?
-          WHERE motorista_id = ?
-            AND DATE(data)
-              BETWEEN ? AND ?
-          `,
-          [
-            motorista.id,
-            dataInicio,
-            dataFim
-          ]
-        );
+          END
+        ),
+        0
+      ) AS despesas
+
+    FROM despesas
+
+    WHERE motorista_id = ?
+
+      AND DATE(data)
+        BETWEEN ? AND ?
+    `,
+    [
+      motorista.id,
+      dataInicio,
+      dataFim
+    ]
+  );
 
       const totalCorridasMotorista =
         Number(
@@ -435,45 +458,38 @@ WHERE motorista_id = ?
         agrupamento = '%Y-%m';
       }
 
-      const [graficoDados] =
-        await pool.query(
-          `
-          SELECT
-            DATE_FORMAT(
-              data_corrida,
-              ?
-            ) AS periodo,
+     const [graficoDados] =
+  await pool.query(
+    `
+    SELECT
+      DATE_FORMAT(
+        data_corrida,
+        ?
+      ) AS periodo,
 
-            COALESCE(
-             SUM(
-  CASE 
-    WHEN status = 'aprovada' THEN valor
-    ELSE 0
-  END
-)
-              0
-            ) AS receita
+      COALESCE(
+        SUM(valor_total),
+        0
+      ) AS receita
 
-          FROM corridas
+    FROM corridas
 
-          WHERE DATE(data_corrida)
-            BETWEEN ? AND ?
+    WHERE DATE(data_corrida)
+      BETWEEN ? AND ?
 
-          ${filtroMotoristaCorrida}
+    ${filtroMotoristaCorrida}
 
-          GROUP BY periodo
+    GROUP BY periodo
 
-          ORDER BY periodo ASC
-          `,
-          [
-            agrupamento,
-            dataInicio,
-            dataFim,
-            ...(motorista_id
-              ? [Number(motorista_id)]
-              : [])
-          ]
-        );
+    ORDER BY periodo ASC
+    `,
+    [
+      agrupamento,
+      dataInicio,
+      dataFim,
+      ...parametrosQueJaTensAqui,
+    ]
+  );
 
       for (const item of graficoDados) {
 
@@ -584,20 +600,50 @@ WHERE motorista_id = ?
       grafico
     });
 
-  } catch (error) {
+ } catch (error) {
 
-    console.error(
-      'ERRO AO CARREGAR RELATÓRIO:',
-      error
-    );
+  console.error(
+    '========================================'
+  );
 
-    return res.status(500).json({
-      sucesso: false,
-      mensagem:
-        'Erro ao carregar relatório.',
-      erro: error.message
-    });
-  }
+  console.error(
+    'ERRO DASHBOARD COMPLETO:',
+    error
+  );
+
+  console.error(
+    'ERRO SQL:',
+    error.sql
+  );
+
+  console.error(
+    'ERRO MYSQL:',
+    error.sqlMessage
+  );
+
+  console.error(
+    'MENSAGEM:',
+    error.message
+  );
+
+  console.error(
+    '========================================'
+  );
+
+
+  return res.status(500).json({
+
+    sucesso: false,
+
+    mensagem:
+      'Erro ao carregar relatório.',
+
+    erro:
+      error.message,
+
+  });
+
+}
 });
 
 
