@@ -71,6 +71,8 @@ router.post('/', autenticar, async (req, res) => {
         const dataFinal = data || new Date();
 
         const [resultado] = await pool.query(
+
+            
             `
             INSERT INTO corridas
             (
@@ -96,6 +98,10 @@ router.post('/', autenticar, async (req, res) => {
                 observacao || null
             ]
         );
+        await notificarAdmins(
+    'Nova despesa',
+    `O motorista ${nome} registou uma despesa de ${valorNumerico} Kz`
+);
 
         return res.status(201).json({
             sucesso: true,

@@ -3,9 +3,8 @@ const pool = require('../db');
 const { autenticar, somenteAdmin } = require('../middleware/auth');
 const upload = require('../config/upload');
 const { notificarAdmins } = require('../services/notificar_admins');
-const { enviarNotificacao } = require('../services/notificacao_service');
-const router = express.Router();
 
+const router = express.Router();
 
 // ======================================================
 // REGISTRAR DESPESA - MOTORISTA
@@ -128,29 +127,34 @@ router.post(
       // ==================================================
 
       const [resultado] = await pool.query(
-        `
-        INSERT INTO despesas
-        (
-          motorista_id,
-          data,
-          categoria,
-          valor,
-          observacao,
-          comprovativo_url
-        )
-          
-        VALUES (?, ?, ?, ?, ?, ?)
-        `,
-        [
-          motoristaId,
-          dataFinal,
-          categoria.trim(),
-          valorNumerico,
-          observacao?.trim() || null,
-          comprovativoUrl,
-        ]
-        
-      );
+    `
+    INSERT INTO despesas
+    (
+      motorista_id,
+      data,
+      categoria,
+      valor,
+      observacao,
+      comprovativo_url
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+    `,
+    [
+      motoristaId,
+      dataFinal,
+      categoria.trim(),
+      valorNumerico,
+      observacao?.trim() || null,
+      comprovativoUrl,
+    ]
+);
+
+
+// 🔔 NOTIFICAR ADMIN
+await notificarAdmins(
+    'Nova despesa registada',
+    `O motorista ${req.usuario.nome} registou uma despesa de ${valorNumerico} Kz`
+);
 
       // ==================================================
 // NOTIFICAR ADMINISTRADORES
