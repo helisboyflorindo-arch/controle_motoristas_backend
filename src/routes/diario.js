@@ -82,25 +82,27 @@ router.get(
             // DESPESAS DO DIA
             // ==========================================
 
-            const [despesas] = await pool.query(
-                `
-                SELECT
-                    id,
-                    motorista_id,
-                    data,
-                    categoria,
-                    valor,
-                    observacao
-                FROM despesas
-                WHERE motorista_id = ?
-                  AND DATE(data) = ?
-                ORDER BY data ASC
-                `,
-                [
-                    motorista_id,
-                    data
-                ]
-            );
+           const [despesas] = await pool.query(
+    `
+    SELECT
+        id,
+        motorista_id,
+        data,
+        categoria,
+        valor,
+        observacao,
+        status
+    FROM despesas
+    WHERE motorista_id = ?
+      AND DATE(data) = ?
+      AND status = 'aprovada'
+    ORDER BY data ASC
+    `,
+    [
+        motorista_id,
+        data
+    ]
+);
 
             // ==========================================
             // TOTAIS

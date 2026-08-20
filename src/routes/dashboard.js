@@ -343,15 +343,16 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
           `
           SELECT
             COUNT(*) AS total_despesas,
-            COALESCE(
-  SUM(
-    CASE 
-      WHEN status = 'aprovada' THEN valor
-      ELSE 0
-    END
-  ),
+          COALESCE(
+    SUM(
+        CASE
+            WHEN status = 'aprovada' THEN valor
+            ELSE 0
+        END
+    ),
 0) AS despesas
-          FROM despesas
+FROM despesas
+WHERE motorista_id = ?
           WHERE motorista_id = ?
             AND DATE(data)
               BETWEEN ? AND ?
@@ -479,17 +480,16 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
         const [[despesaPeriodo]] =
           await pool.query(
             `
-            SELECT
-              COALESCE(
-  SUM(
-    CASE 
-      WHEN status = 'aprovada' THEN valor
-      ELSE 0
-    END
-  ),
-0) AS despesas
+                  SELECT
+                    COALESCE(
+              SUM(
+                CASE
+                    WHEN status = 'aprovada' THEN valor
+                    ELSE 0
+                END
+            ) AS despesas
+                FROM despesas
 
-            FROM despesas
 
             WHERE DATE(data)
               BETWEEN ? AND ?
