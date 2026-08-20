@@ -589,69 +589,122 @@ router.put(
 // ======================================================
 
 router.put(
-'/rejeitar/:id',
-autenticar,
-somenteAdmin,
-async(req,res)=>{
+  '/rejeitar/:id',
+  autenticar,
+  somenteAdmin,
+  async (req, res) => {
 
-    try{
-      const [dados] = await pool.query(
-`
-SELECT 
-u.fcm_token,
-d.valor,
-d.categoria
-FROM despesas d
-INNER JOIN usuarios u
-ON u.motorista_id = d.motorista_id
-WHERE d.id=?
-`,
-[id]
-);
+    try {
+
+      const { id } = req.params;
 
 
-if(
- dados.length > 0 &&
- dados[0].fcm_token
-){
-
- await enviarNotificacao(
-   dados[0].fcm_token,
-   'Despesa rejeitada ❌',
-   `A sua despesa de ${dados[0].categoria} no valor de ${dados[0].valor} Kz foi rejeitada.`
- );
-
-}
-
-        const {id}=req.params;
-
-
-        await pool.query(
+      // Alterar estado
+      const [resultado] = await pool.query(
         `
         UPDATE despesas
-        SET status='rejeitada'
-        WHERE id=?
+        SET status = 'rejeitada'
+        WHERE id = ?
         `,
         [id]
+      );
+
+
+      if(resultado.affectedRows === 0){
+
+        return res.status(404).json({
+          sucesso:false,
+          mensagem:'Despesa não encontrada.'
+        });
+
+      }
+
+
+
+      // Buscar motorista
+      const [dados] = await pool.query(
+        `
+        SELECT
+          u.fcm_token,
+          d.categoria,
+          d.valor
+        FROM despesas d
+
+        INNER JOIN usuarios u
+          ON u.motorista_id = d.motorista_id
+
+        WHERE d.id = ?
+        `,
+        [id]
+      );
+
+
+
+      console.log(
+        'DADOS NOTIFICACAO REJEICAO:',
+        dados
+      );
+
+
+
+      // Enviar notificação
+
+      if(
+        dados.length > 0 &&
+        dados[0].fcm_token
+      ){
+
+        await enviarNotificacao(
+          dados[0].fcm_token,
+          'Despesa rejeitada ❌',
+          `A sua despesa de ${dados[0].categoria} no valor de ${dados[0].valor} Kz foi rejeitada.`
         );
 
 
-        res.json({
-            sucesso:true,
-            mensagem:'Despesa rejeitada.'
-        });
+        console.log(
+          'Notificação rejeição enviada'
+        );
+
+      }
 
 
-    }catch(error){
 
-        res.status(500).json({
-            sucesso:false,
-            erro:error.message
-        });
+      return res.json({
+
+        sucesso:true,
+
+        mensagem:
+        'Despesa rejeitada com sucesso.'
+
+      });
+
+
+
+    } catch(error){
+
+
+      console.error(
+        'ERRO REJEITAR DESPESA:',
+        error
+      );
+
+
+      return res.status(500).json({
+
+        sucesso:false,
+
+        mensagem:
+        'Erro ao rejeitar despesa.',
+
+        erro:error.message
+
+      });
+
 
     }
 
-});
+  }
+);
 
 // ======================================================
 // APROVAR DESPESA - ADMIN
