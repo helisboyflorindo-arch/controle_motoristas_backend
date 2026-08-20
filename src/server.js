@@ -10,6 +10,7 @@ const corridasRoutes = require('./routes/corridas');
 const despesasRoutes = require('./routes/despesas');
 const dashboardRoutes = require('./routes/dashboard');
 const veiculosRoutes = require('./routes/veiculos');
+const { enviarNotificacao } = require('./services/notificacao_service');
 const app = express();
 
 app.use(cors());
@@ -54,6 +55,39 @@ app.use('/api/despesas', despesasRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/veiculos', veiculosRoutes);
 const PORT = process.env.PORT || 3000;
+app.post('/api/teste-notificacao', async (req, res) => {
+
+    try {
+
+        const { token } = req.body;
+
+        await enviarNotificacao({
+            token: token,
+            titulo: 'Teste Controle Motoristas',
+            mensagem: 'A notificação está funcionando! 🚗',
+        });
+
+
+        res.json({
+            sucesso: true,
+            mensagem: 'Notificação enviada'
+        });
+
+
+    } catch(error){
+
+        console.error(error);
+
+        res.status(500).json({
+            sucesso:false,
+            erro:error.message
+        });
+
+    }
+
+});
+
+
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Servidor rodando na porta ${PORT}`);

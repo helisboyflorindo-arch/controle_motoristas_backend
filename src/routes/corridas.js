@@ -1,7 +1,7 @@
 const express = require('express');
 const pool = require('../db');
 const { autenticar, somenteAdmin } = require('../middleware/auth');
-
+const { notificarAdmins } = require('../services/notificar_admins');
 const router = express.Router();
 
 
@@ -122,6 +122,14 @@ router.post('/', autenticar, async (req, res) => {
             erro: error.message
         });
     }
+
+    await notificarAdmins(
+
+    'Nova corrida registada',
+
+    `${req.usuario.nome} registou uma nova corrida`
+
+);
 });
 
 

@@ -689,41 +689,77 @@ router.post('/fcm-token', autenticar, async (req, res) => {
 // GUARDAR FCM TOKEN
 // ======================================================
 
-router.post('/fcm-token', autenticar, async (req, res) => {
-    try {
-        const usuarioId = req.usuario.id;
-        const { fcm_token } = req.body;
+router.post('/fcm-token', autenticar, async (req,res)=>{
 
-        if (!fcm_token || !fcm_token.trim()) {
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: 'FCM token é obrigatório.'
-            });
-        }
 
-        await pool.query(
-            `
-            UPDATE usuarios
-            SET fcm_token = ?
-            WHERE id = ?
-            `,
-            [fcm_token.trim(), usuarioId]
-        );
+try {
 
-        return res.json({
-            sucesso: true,
-            mensagem: 'FCM token guardado com sucesso.'
-        });
 
-    } catch (error) {
-        console.error('ERRO AO GUARDAR FCM TOKEN:', error);
+const usuarioId = req.usuario.id;
 
-        return res.status(500).json({
-            sucesso: false,
-            mensagem: 'Erro ao guardar FCM token.',
-            erro: error.message
-        });
-    }
+const { fcm_token } = req.body;
+
+
+if(!fcm_token){
+
+return res.status(400).json({
+
+sucesso:false,
+
+mensagem:'FCM token obrigatório'
+
+});
+
+}
+
+
+
+await pool.query(
+
+`
+UPDATE usuarios
+SET fcm_token = ?
+WHERE id = ?
+
+`,
+
+[
+fcm_token,
+usuarioId
+]
+
+);
+
+
+
+return res.json({
+
+sucesso:true,
+
+mensagem:'FCM token guardado'
+
+});
+
+
+
+}catch(error){
+
+
+console.error(error);
+
+
+res.status(500).json({
+
+sucesso:false,
+
+mensagem:'Erro ao guardar token'
+
+});
+
+
+}
+
+
 });
 
 // ======================================================

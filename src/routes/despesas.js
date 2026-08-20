@@ -2,7 +2,7 @@ const express = require('express');
 const pool = require('../db');
 const { autenticar, somenteAdmin } = require('../middleware/auth');
 const upload = require('../config/upload');
-
+const { notificarAdmins } = require('../services/notificar_admins');
 const router = express.Router();
 
 
@@ -137,6 +137,7 @@ router.post(
           observacao,
           comprovativo_url
         )
+          
         VALUES (?, ?, ?, ?, ?, ?)
         `,
         [
@@ -147,7 +148,43 @@ router.post(
           observacao?.trim() || null,
           comprovativoUrl,
         ]
+        
       );
+
+      // ==================================================
+// NOTIFICAR ADMINISTRADORES
+// ==================================================
+
+try {
+
+  const [admins] = await pool.query(
+    `
+    SELECT fcm_token
+    FROM usuarios
+    WHERE tipo = 'admin'
+    AND fcm_token IS NOT NULL
+    `
+  );
+
+
+  for (const admin of admins) {
+
+    await enviarNotificacao(
+      admin.fcm_token,
+      'Nova despesa registada',
+      `${req.usuario.nome} registou uma despesa de ${valorNumerico} Kz`
+    );
+
+  }
+
+} catch (erroNotificacao) {
+
+  console.error(
+    'Erro ao enviar notificação de despesa:',
+    erroNotificacao
+  );
+
+}
 
       // ==================================================
       // RESPOSTA
@@ -419,6 +456,13 @@ router.delete(
         `,
         [id]
       );
+      await notificarAdmins(
+
+    'Nova despesa registada',
+
+    `${req.usuario.nome} registou uma despesa de ${valorNumerico} Kz`
+
+);
 
       if (resultado.affectedRows === 0) {
         return res.status(404).json({
