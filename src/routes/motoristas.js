@@ -244,43 +244,115 @@ router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
   }
 });
 
+// ELIMINAR MOTORISTA DEFINITIVAMENTE
+router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
+  const conexao = await pool.getConnection();
 
-// REATIVAR MOTORISTA
-router.patch('/:id/ativar', autenticar, somenteAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const [resultado] = await pool.query(
+    await conexao.beginTransaction();
+
+
+    // verificar se existe
+    const [motorista] = await conexao.query(
       `
-      UPDATE motoristas
-      SET ativo = 1
+      SELECT id
+      FROM motoristas
       WHERE id = ?
       `,
       [id]
     );
 
-    if (resultado.affectedRows === 0) {
+
+    if (motorista.length === 0) {
+      await conexao.rollback();
+
       return res.status(404).json({
         sucesso: false,
         mensagem: 'Motorista não encontrado.'
       });
     }
 
+
+    // apagar veículos
+    await conexao.query(
+      `
+      DELETE FROM veiculos
+      WHERE motorista_id = ?
+      `,
+      [id]
+    );
+
+
+    // apagar corridas
+    await conexao.query(
+      `
+      DELETE FROM corridas
+      WHERE motorista_id = ?
+      `,
+      [id]
+    );
+
+
+    // apagar despesas
+    await conexao.query(
+      `
+      DELETE FROM despesas
+      WHERE motorista_id = ?
+      `,
+      [id]
+    );
+
+
+    // apagar utilizador ligado
+    await conexao.query(
+      `
+      DELETE FROM usuarios
+      WHERE motorista_id = ?
+      `,
+      [id]
+    );
+
+
+    // apagar motorista
+    await conexao.query(
+      `
+      DELETE FROM motoristas
+      WHERE id = ?
+      `,
+      [id]
+    );
+
+
+    await conexao.commit();
+
+
     res.json({
       sucesso: true,
-      mensagem: 'Motorista reativado com sucesso.'
+      mensagem: 'Motorista eliminado definitivamente.'
     });
 
+
   } catch (error) {
-    console.error(error);
+
+    await conexao.rollback();
+
+    console.error('Erro ao eliminar motorista:', error);
+
 
     res.status(500).json({
       sucesso: false,
-      mensagem: 'Erro ao reativar motorista.',
+      mensagem: 'Erro ao eliminar motorista.',
       erro: error.message
     });
+
+
+  } finally {
+
+    conexao.release();
+
   }
 });
-
 
 module.exports = router;
