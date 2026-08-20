@@ -4,28 +4,27 @@ const admin = require('firebase-admin');
 let serviceAccount;
 
 
-// Render / Produção
+// Ler variável do Render
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 
     serviceAccount = JSON.parse(
         process.env.FIREBASE_SERVICE_ACCOUNT
     );
 
-} 
-// Local
-else {
+} else {
 
     serviceAccount = require('../../firebase-service-account.json');
 
 }
 
 
+// Inicializar Firebase
 
-if (!admin.apps.length) {
+if (admin.getApps().length === 0) {
 
     admin.initializeApp({
 
-        credential: admin.credential.cert(serviceAccount)
+        credential: admin.cert(serviceAccount)
 
     });
 
