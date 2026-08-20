@@ -302,24 +302,25 @@ router.get('/minhas', autenticar, async (req, res) => {
 
 router.get('/', autenticar, somenteAdmin, async (req, res) => {
   try {
-    const [despesas] = await pool.query(
-      `
-      SELECT
-        d.id,
-        d.motorista_id,
-        m.nome AS motorista,
-        d.data,
-        d.categoria,
-        d.valor,
-        d.observacao,
-        d.comprovativo_url,
-        d.created_at
-      FROM despesas d
-      INNER JOIN motoristas m
-        ON m.id = d.motorista_id
-      ORDER BY d.data DESC, d.id DESC
-      `
-    );
+   const [despesas] = await pool.query(
+`
+SELECT
+  d.id,
+  d.motorista_id,
+  m.nome AS motorista,
+  d.data,
+  d.categoria,
+  d.valor,
+  d.observacao,
+  d.comprovativo_url,
+  d.status,
+  d.created_at
+FROM despesas d
+INNER JOIN motoristas m
+ON m.id = d.motorista_id
+ORDER BY d.data DESC, d.id DESC
+`
+);
 
     return res.json({
       sucesso: true,
@@ -594,6 +595,33 @@ somenteAdmin,
 async(req,res)=>{
 
     try{
+      const [dados] = await pool.query(
+`
+SELECT 
+u.fcm_token,
+d.valor,
+d.categoria
+FROM despesas d
+INNER JOIN usuarios u
+ON u.motorista_id = d.motorista_id
+WHERE d.id=?
+`,
+[id]
+);
+
+
+if(
+ dados.length > 0 &&
+ dados[0].fcm_token
+){
+
+ await enviarNotificacao(
+   dados[0].fcm_token,
+   'Despesa rejeitada ❌',
+   `A sua despesa de ${dados[0].categoria} no valor de ${dados[0].valor} Kz foi rejeitada.`
+ );
+
+}
 
         const {id}=req.params;
 
