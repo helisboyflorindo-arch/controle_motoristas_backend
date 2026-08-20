@@ -3,6 +3,7 @@ const pool = require('../db');
 const { autenticar, somenteAdmin } = require('../middleware/auth');
 const upload = require('../config/upload');
 const { notificarAdmins } = require('../services/notificar_admins');
+const { enviarNotificacao } = require('../services/notificacao_service');
 const router = express.Router();
 
 

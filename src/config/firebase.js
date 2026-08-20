@@ -4,12 +4,15 @@ const admin = require('firebase-admin');
 let serviceAccount;
 
 
-// Ler variável do Render
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 
     serviceAccount = JSON.parse(
         process.env.FIREBASE_SERVICE_ACCOUNT
     );
+
+    serviceAccount.private_key =
+        serviceAccount.private_key.replace(/\\n/g, '\n');
+
 
 } else {
 
@@ -18,17 +21,16 @@ if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 }
 
 
-// Inicializar Firebase
-
 if (admin.getApps().length === 0) {
 
     admin.initializeApp({
-
         credential: admin.cert(serviceAccount)
-
     });
 
 }
 
 
-module.exports = admin;
+module.exports = {
+    admin,
+    messaging: admin.messaging()
+};
