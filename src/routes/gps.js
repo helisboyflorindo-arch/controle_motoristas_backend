@@ -61,13 +61,15 @@ router.post('/enviar', async (req, res) => {
 
     } catch(error) {
 
-        console.error(error);
+    console.error('ERRO GPS:', error);
 
-        res.status(500).json({
-            mensagem: 'Erro ao guardar GPS'
-        });
+    res.status(500).json({
+        sucesso: false,
+        erro: error.message,
+        codigo: error.code
+    });
 
-    }
+}
 
 });
 
