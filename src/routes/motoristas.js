@@ -307,7 +307,7 @@ router.put('/:id/estado', autenticar, somenteAdmin, async (req, res) => {
 });
 
 // ACTIVAR MOTORISTA
-router.put('/:id/ativar', autenticar, somenteAdmin, async (req,res)=>{
+router.patch('/:id/ativar', autenticar, somenteAdmin, async (req, res) => {
 
   try {
 
@@ -335,24 +335,23 @@ router.put('/:id/ativar', autenticar, somenteAdmin, async (req,res)=>{
 
 
     res.json({
-      sucesso:true,
-      mensagem:'Motorista activado com sucesso.'
+      sucesso: true,
+      mensagem: 'Motorista activado com sucesso.'
     });
 
 
-  } catch(error){
+  } catch (error) {
 
     console.error(error);
 
     res.status(500).json({
-      sucesso:false,
-      mensagem:'Erro ao activar motorista.'
+      sucesso: false,
+      mensagem: 'Erro ao activar motorista.'
     });
 
   }
 
 });
-
 
 // DESACTIVAR MOTORISTA
 router.put('/:id/desativar', autenticar, somenteAdmin, async (req,res)=>{
