@@ -654,7 +654,7 @@ router.post('/fcm-token', autenticar, async (req, res) => {
             });
         }
 
-      await pool.query(
+ const resultado = await pool.query(
 `
 INSERT INTO dispositivos_admin
 (
@@ -677,6 +677,11 @@ ultimo_acesso = CURRENT_TIMESTAMP
 ]
 );
 
+
+console.log(
+    'TOKEN GUARDADO NA TABELA dispositivos_admin:',
+    resultado[0]
+);
         console.log('=================================');
         console.log('FCM TOKEN SALVO');
         console.log('Usuário:', usuarioId);
