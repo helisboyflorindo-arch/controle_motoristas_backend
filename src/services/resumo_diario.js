@@ -47,7 +47,7 @@ const [despesas] = await pool.query(
 
 💰 Despesas registadas: ${despesas[0].total}
 
-Sistema Controle de Motoristas
+Sistema Helisan Fleet Manager
         `;
 
 
