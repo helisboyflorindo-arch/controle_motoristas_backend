@@ -17,7 +17,6 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
         ativo,
         created_at
       FROM motoristas
-      WHERE ativo = 1
       ORDER BY id DESC
     `);
 

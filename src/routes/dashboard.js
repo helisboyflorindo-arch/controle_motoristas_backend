@@ -181,10 +181,11 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
     */
 
     const [[motoristasTotais]] =
-      await pool.query(`
-        SELECT COUNT(*) AS total
-        FROM motoristas
-      `);
+  await pool.query(`
+    SELECT COUNT(*) AS total
+    FROM motoristas
+    WHERE ativo = 1
+  `);
 
     const [[motoristasAtivos]] =
       await pool.query(`
