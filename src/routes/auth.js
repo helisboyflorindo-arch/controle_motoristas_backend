@@ -654,14 +654,28 @@ router.post('/fcm-token', autenticar, async (req, res) => {
             });
         }
 
-        await pool.query(
-            `
-            UPDATE usuarios
-            SET fcm_token = ?
-            WHERE id = ?
-            `,
-            [fcm_token, usuarioId]
-        );
+      await pool.query(
+`
+INSERT INTO dispositivos_admin
+(
+    usuario_id,
+    fcm_token,
+    dispositivo
+)
+
+VALUES (?, ?, ?)
+
+ON DUPLICATE KEY UPDATE
+
+ultimo_acesso = CURRENT_TIMESTAMP
+
+`,
+[
+    usuarioId,
+    fcm_token,
+    'Android'
+]
+);
 
         console.log('=================================');
         console.log('FCM TOKEN SALVO');
