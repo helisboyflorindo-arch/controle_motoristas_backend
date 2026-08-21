@@ -11,6 +11,7 @@ const despesasRoutes = require('./routes/despesas');
 const dashboardRoutes = require('./routes/dashboard');
 const veiculosRoutes = require('./routes/veiculos');
 const { enviarNotificacao } = require('./services/notificacao_service');
+const gpsRoutes = require('./routes/gps');
 require('./services/resumo_diario');
 const app = express();
 
@@ -55,6 +56,7 @@ app.use('/api/corridas', corridasRoutes);
 app.use('/api/despesas', despesasRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/veiculos', veiculosRoutes);
+app.use('/api/gps', gpsRoutes);
 const PORT = process.env.PORT || 3000;
 app.post('/api/teste-notificacao', async (req, res) => {
 

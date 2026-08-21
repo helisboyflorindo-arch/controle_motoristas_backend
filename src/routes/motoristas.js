@@ -17,6 +17,7 @@ router.get('/', autenticar, somenteAdmin, async (req, res) => {
         ativo,
         created_at
       FROM motoristas
+      WHERE ativo = 1
       ORDER BY id DESC
     `);
 
@@ -209,10 +210,14 @@ router.put('/:id', autenticar, somenteAdmin, async (req, res) => {
 
 // DESATIVAR MOTORISTA
 router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
+
   try {
+
     const { id } = req.params;
 
-    const [resultado] = await pool.query(
+
+    // desativar motorista
+    await pool.query(
       `
       UPDATE motoristas
       SET ativo = 0
@@ -221,138 +226,35 @@ router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
       [id]
     );
 
-    if (resultado.affectedRows === 0) {
-      return res.status(404).json({
-        sucesso: false,
-        mensagem: 'Motorista não encontrado.'
-      });
-    }
+
+    // bloquear login do utilizador ligado
+    await pool.query(
+      `
+      UPDATE usuarios
+      SET ativo = 0
+      WHERE motorista_id = ?
+      `,
+      [id]
+    );
+
 
     res.json({
       sucesso: true,
       mensagem: 'Motorista desativado com sucesso.'
     });
 
-  } catch (error) {
+
+  } catch(error) {
+
     console.error(error);
 
     res.status(500).json({
-      sucesso: false,
-      mensagem: 'Erro ao desativar motorista.',
-      erro: error.message
+      sucesso:false,
+      mensagem:'Erro ao desativar motorista.'
     });
-  }
-});
-
-// ELIMINAR MOTORISTA DEFINITIVAMENTE
-router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
-  const conexao = await pool.getConnection();
-
-  try {
-    const { id } = req.params;
-
-    await conexao.beginTransaction();
-
-
-    // verificar se existe
-    const [motorista] = await conexao.query(
-      `
-      SELECT id
-      FROM motoristas
-      WHERE id = ?
-      `,
-      [id]
-    );
-
-
-    if (motorista.length === 0) {
-      await conexao.rollback();
-
-      return res.status(404).json({
-        sucesso: false,
-        mensagem: 'Motorista não encontrado.'
-      });
-    }
-
-
-    // apagar veículos
-    await conexao.query(
-      `
-      DELETE FROM veiculos
-      WHERE motorista_id = ?
-      `,
-      [id]
-    );
-
-
-    // apagar corridas
-    await conexao.query(
-      `
-      DELETE FROM corridas
-      WHERE motorista_id = ?
-      `,
-      [id]
-    );
-
-
-    // apagar despesas
-    await conexao.query(
-      `
-      DELETE FROM despesas
-      WHERE motorista_id = ?
-      `,
-      [id]
-    );
-
-
-    // apagar utilizador ligado
-    await conexao.query(
-      `
-      DELETE FROM usuarios
-      WHERE motorista_id = ?
-      `,
-      [id]
-    );
-
-
-    // apagar motorista
-    await conexao.query(
-      `
-      DELETE FROM motoristas
-      WHERE id = ?
-      `,
-      [id]
-    );
-
-
-    await conexao.commit();
-
-
-    res.json({
-      sucesso: true,
-      mensagem: 'Motorista eliminado definitivamente.'
-    });
-
-
-  } catch (error) {
-
-    await conexao.rollback();
-
-    console.error('Erro ao eliminar motorista:', error);
-
-
-    res.status(500).json({
-      sucesso: false,
-      mensagem: 'Erro ao eliminar motorista.',
-      erro: error.message
-    });
-
-
-  } finally {
-
-    conexao.release();
 
   }
+
 });
 
 module.exports = router;
