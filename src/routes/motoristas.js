@@ -256,4 +256,149 @@ router.delete('/:id', autenticar, somenteAdmin, async (req, res) => {
 
 });
 
+// ALTERAR ESTADO DO MOTORISTA
+router.put('/:id/estado', autenticar, somenteAdmin, async (req, res) => {
+
+  try {
+
+    const { id } = req.params;
+    const { ativo } = req.body;
+
+
+    await pool.query(
+      `
+      UPDATE motoristas
+      SET ativo = ?
+      WHERE id = ?
+      `,
+      [ativo, id]
+    );
+
+
+    await pool.query(
+      `
+      UPDATE usuarios
+      SET ativo = ?
+      WHERE motorista_id = ?
+      `,
+      [ativo, id]
+    );
+
+
+    res.json({
+      sucesso: true,
+      mensagem: ativo
+        ? 'Motorista ativado com sucesso.'
+        : 'Motorista desativado com sucesso.'
+    });
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    res.status(500).json({
+      sucesso:false,
+      mensagem:'Erro ao alterar estado do motorista.'
+    });
+
+  }
+
+});
+
+// ACTIVAR MOTORISTA
+router.put('/:id/ativar', autenticar, somenteAdmin, async (req,res)=>{
+
+  try {
+
+    const { id } = req.params;
+
+
+    await pool.query(
+      `
+      UPDATE motoristas
+      SET ativo = 1
+      WHERE id = ?
+      `,
+      [id]
+    );
+
+
+    await pool.query(
+      `
+      UPDATE usuarios
+      SET ativo = 1
+      WHERE motorista_id = ?
+      `,
+      [id]
+    );
+
+
+    res.json({
+      sucesso:true,
+      mensagem:'Motorista activado com sucesso.'
+    });
+
+
+  } catch(error){
+
+    console.error(error);
+
+    res.status(500).json({
+      sucesso:false,
+      mensagem:'Erro ao activar motorista.'
+    });
+
+  }
+
+});
+
+
+// DESACTIVAR MOTORISTA
+router.put('/:id/desativar', autenticar, somenteAdmin, async (req,res)=>{
+
+  try {
+
+    const { id } = req.params;
+
+
+    await pool.query(
+      `
+      UPDATE motoristas
+      SET ativo = 0
+      WHERE id = ?
+      `,
+      [id]
+    );
+
+
+    await pool.query(
+      `
+      UPDATE usuarios
+      SET ativo = 0
+      WHERE motorista_id = ?
+      `,
+      [id]
+    );
+
+
+    res.json({
+      sucesso:true,
+      mensagem:'Motorista desactivado com sucesso.'
+    });
+
+
+  } catch(error){
+
+    console.error(error);
+
+    res.status(500).json({
+      sucesso:false,
+      mensagem:'Erro ao desactivar motorista.'
+    });
+
+  }
+
+});
+
 module.exports = router;
