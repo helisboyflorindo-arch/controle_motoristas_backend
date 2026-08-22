@@ -486,9 +486,7 @@ const saldoGeral =
     `,
     [
       agrupamento,
-      dataInicio,
-      dataFim,
-      ...parametrosQueJaTensAqui,
+      ...parametrosCorrida,
     ]
   );
 
