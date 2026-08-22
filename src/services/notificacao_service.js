@@ -2,7 +2,76 @@ const admin = require('firebase-admin');
 const pool = require('../db');
 
 
-async function enviarNotificacaoAdmins(titulo, mensagem){
+
+// ======================================
+// ENVIAR PARA UM DISPOSITIVO
+// motorista específico
+// ======================================
+
+async function enviarNotificacao(
+    token,
+    titulo,
+    mensagem
+){
+
+    try {
+
+
+        console.log("==============================");
+        console.log("TOKEN RECEBIDO:");
+        console.log(token);
+        console.log("==============================");
+
+
+        await admin.messaging().send({
+
+            token: token,
+
+            notification: {
+
+                title: titulo,
+
+                body: mensagem
+
+            }
+
+        });
+
+
+
+        console.log(
+            'Notificação enviada'
+        );
+
+
+
+    } catch(error){
+
+
+        console.error(
+            'Erro enviar notificação:',
+            error
+        );
+
+
+        throw error;
+
+    }
+
+}
+
+
+
+
+// ======================================
+// ENVIAR PARA TODOS ADMINISTRADORES
+// ======================================
+
+
+async function enviarNotificacaoAdmins(
+    titulo,
+    mensagem
+){
 
     try {
 
@@ -14,6 +83,7 @@ async function enviarNotificacaoAdmins(titulo, mensagem){
             WHERE fcm_token IS NOT NULL
             `
         );
+
 
 
         if(dispositivos.length === 0){
@@ -34,7 +104,8 @@ async function enviarNotificacaoAdmins(titulo, mensagem){
 
 
 
-        const resposta = await admin.messaging()
+        const resposta =
+        await admin.messaging()
         .sendEachForMulticast({
 
             tokens,
@@ -52,30 +123,34 @@ async function enviarNotificacaoAdmins(titulo, mensagem){
 
 
         console.log(
-            'Notificações enviadas:',
+            'Admins notificados:',
             resposta.successCount
         );
 
 
-        console.log(
-            'Falharam:',
-            resposta.failureCount
-        );
 
+    }catch(error){
 
-
-    } catch(error){
 
         console.error(
-            'Erro FCM múltiplo:',
+            'Erro FCM admins:',
             error
         );
 
-    }
 
+        throw error;
+
+    }
 
 }
 
 
 
-module.exports = enviarNotificacaoAdmins;
+
+module.exports = {
+
+    enviarNotificacao,
+
+    enviarNotificacaoAdmins
+
+};
