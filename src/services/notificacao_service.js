@@ -1,7 +1,8 @@
-const admin = require('firebase-admin');
+const {
+    messaging
+} = require('../config/firebase');
+
 const pool = require('../db');
-
-
 
 // ======================================
 // ENVIAR PARA UM DISPOSITIVO
@@ -23,19 +24,19 @@ async function enviarNotificacao(
         console.log("==============================");
 
 
-        await admin.messaging().send({
+        await messaging.send({
 
-            token: token,
+    token: token,
 
-            notification: {
+    notification: {
 
-                title: titulo,
+        title: titulo,
 
-                body: mensagem
+        body: mensagem
 
-            }
+    }
 
-        });
+});
 
 
 
