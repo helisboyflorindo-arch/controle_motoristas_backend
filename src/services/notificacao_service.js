@@ -1,28 +1,81 @@
-const { messaging } = require('../config/firebase');
+const admin = require('firebase-admin');
+const pool = require('../db');
 
 
-async function enviarNotificacao(token, titulo, mensagem) {
+async function enviarNotificacaoAdmins(titulo, mensagem){
 
-    console.log("==============================");
-    console.log("TOKEN RECEBIDO:");
-    console.log(token);
-    console.log("==============================");
+    try {
 
 
-    return await messaging.send({
+        const [dispositivos] = await pool.query(
+            `
+            SELECT fcm_token
+            FROM dispositivos_admin
+            WHERE fcm_token IS NOT NULL
+            `
+        );
 
-        token: token,
 
-        notification:{
-            title: titulo,
-            body: mensagem
+        if(dispositivos.length === 0){
+
+            console.log(
+                'Nenhum administrador com FCM'
+            );
+
+            return;
+
         }
 
-    });
+
+
+        const tokens = dispositivos.map(
+            item => item.fcm_token
+        );
+
+
+
+        const resposta = await admin.messaging()
+        .sendEachForMulticast({
+
+            tokens,
+
+            notification:{
+
+                title: titulo,
+
+                body: mensagem
+
+            }
+
+        });
+
+
+
+        console.log(
+            'Notificações enviadas:',
+            resposta.successCount
+        );
+
+
+        console.log(
+            'Falharam:',
+            resposta.failureCount
+        );
+
+
+
+    } catch(error){
+
+        console.error(
+            'Erro FCM múltiplo:',
+            error
+        );
+
+    }
+
 
 }
 
 
-module.exports = {
-    enviarNotificacao
-};
+
+module.exports = enviarNotificacaoAdmins;

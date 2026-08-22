@@ -12,16 +12,23 @@ async function notificarAdmins(
 
         const [admins] = await pool.query(
             `
-            SELECT id, nome, fcm_token
-            FROM usuarios
-            WHERE tipo = 'admin'
-            AND fcm_token IS NOT NULL
+            SELECT 
+                d.id,
+                d.fcm_token,
+                u.nome
+
+            FROM dispositivos_admin d
+
+            INNER JOIN usuarios u
+                ON u.id = d.usuario_id
+
+            WHERE d.fcm_token IS NOT NULL
             `
         );
 
 
         console.log(
-            'Administradores encontrados:',
+            'Dispositivos administradores encontrados:',
             admins.length
         );
 
@@ -38,7 +45,9 @@ async function notificarAdmins(
 
             console.log(
                 'Notificado:',
-                admin.nome
+                admin.nome,
+                'Dispositivo:',
+                admin.id
             );
 
         }
