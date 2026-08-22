@@ -496,14 +496,17 @@ const saldoGeral =
           await pool.query(
             `
                   SELECT
-                    COALESCE(
-              SUM(
-                CASE
-                    WHEN status = 'aprovada' THEN valor
-                    ELSE 0
-                END
-            ) AS despesas
-                FROM despesas
+COALESCE(
+    SUM(
+        CASE
+            WHEN status = 'aprovada' THEN valor
+            ELSE 0
+        END
+    ),
+    0
+) AS despesas
+
+FROM despesas
 
 
             WHERE DATE(data)
