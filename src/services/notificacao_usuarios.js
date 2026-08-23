@@ -28,10 +28,11 @@ async function notificarAdmins(
         const [admins] = await pool.query(
 
         `
-        SELECT
+       SELECT
 
-            d.fcm_token,
-            u.nome
+    d.fcm_token,
+    u.id AS usuario_id,
+    u.nome
 
         FROM dispositivos d
 
@@ -59,33 +60,38 @@ async function notificarAdmins(
         );
 
 
-
-        for(const admin of admins){
-            await criarNotificacao(
-    usuarioId,
-    titulo,
-    mensagem
-);
+for(const admin of admins){
 
 
-            await enviarNotificacao(
+    await criarNotificacao(
 
-                admin.fcm_token,
+        admin.usuario_id,
 
-                titulo,
+        titulo,
 
-                mensagem
+        mensagem
 
-            );
-
-
-            console.log(
-                'Admin notificado:',
-                admin.nome
-            );
+    );
 
 
-        }
+    await enviarNotificacao(
+
+        admin.fcm_token,
+
+        titulo,
+
+        mensagem
+
+    );
+
+
+    console.log(
+        'Admin notificado:',
+        admin.nome
+    );
+
+
+}
 
 
 
@@ -168,6 +174,16 @@ async function notificarUsuario(
 
 
         for(const dispositivo of dispositivos){
+
+            await criarNotificacao(
+
+    usuarioId,
+
+    titulo,
+
+    mensagem
+
+);
 
 
 
