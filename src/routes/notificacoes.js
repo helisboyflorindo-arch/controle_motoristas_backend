@@ -33,9 +33,17 @@ const [notificacoes] = await pool.query(
 SELECT
 
 id,
+
 titulo,
+
 mensagem,
+
+tipo,
+
+referencia_id,
+
 lida,
+
 created_at
 
 FROM notificacoes
