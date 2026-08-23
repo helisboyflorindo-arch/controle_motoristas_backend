@@ -5,6 +5,11 @@ const {
 } = require('./notificacao_service');
 
 
+const {
+    criarNotificacao
+} = require('./notificacao_database');
+
+
 
 // ============================================
 // NOTIFICAR TODOS ADMINISTRADORES
@@ -56,6 +61,11 @@ async function notificarAdmins(
 
 
         for(const admin of admins){
+            await criarNotificacao(
+    usuarioId,
+    titulo,
+    mensagem
+);
 
 
             await enviarNotificacao(
