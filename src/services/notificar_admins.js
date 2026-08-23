@@ -1,5 +1,12 @@
 const pool = require('../db');
-const { enviarNotificacao } = require('./notificacao_service');
+const {
+    enviarNotificacao
+} = require('./notificacao_service');
+
+
+const {
+    criarNotificacao
+} = require('./notificacao_database');
 
 
 async function notificarAdmins(
@@ -12,10 +19,11 @@ async function notificarAdmins(
 
         const [admins] = await pool.query(
             `
-            SELECT 
-                d.id,
-                d.fcm_token,
-                u.nome
+           SELECT
+    d.id,
+    d.fcm_token,
+    u.id AS usuario_id,
+    u.nome
 
             FROM dispositivos_admin d
 
@@ -34,6 +42,12 @@ async function notificarAdmins(
 
 
         for (const admin of admins) {
+
+            await criarNotificacao(
+   admin.usuario_id,
+    titulo,
+    mensagem
+);
 
 
             await enviarNotificacao(

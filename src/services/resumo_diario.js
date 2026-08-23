@@ -1,7 +1,14 @@
 const cron = require('node-cron');
 const pool = require('../db');
-const { enviarNotificacao } = require('./notificacao_service');
 
+const {
+    enviarNotificacao
+} = require('./notificacao_service');
+
+
+const {
+    criarNotificacao
+} = require('./notificacao_database');
 
 async function enviarResumoDiario() {
 
@@ -18,26 +25,33 @@ async function enviarResumoDiario() {
         );
 
 
-       // Despesas aprovadas do dia
-const [despesas] = await pool.query(
-    `
-    SELECT COUNT(*) AS total
-    FROM despesas
-    WHERE DATE(created_at) = CURDATE()
-    AND status = 'aprovada'
-    `
-);
+        // Despesas aprovadas do dia
+        const [despesas] = await pool.query(
+            `
+            SELECT COUNT(*) AS total
+            FROM despesas
+            WHERE DATE(created_at) = CURDATE()
+            AND status = 'aprovada'
+            `
+        );
+
 
 
         // Buscar admins
         const [admins] = await pool.query(
             `
-            SELECT fcm_token
-            FROM usuarios
-            WHERE tipo='admin'
-            AND fcm_token IS NOT NULL
+            SELECT
+
+                usuario_id,
+                fcm_token
+
+            FROM dispositivos_admin
+
+            WHERE fcm_token IS NOT NULL
+
             `
         );
+
 
 
         const mensagem = `
@@ -45,21 +59,41 @@ const [despesas] = await pool.query(
 
 🚗 Corridas registadas: ${corridas[0].total}
 
-💰 Despesas registadas: ${despesas[0].total}
+💰 Despesas aprovadas: ${despesas[0].total}
 
 Sistema Helisan Fleet Manager
         `;
 
 
+
         for(const admin of admins){
 
-            await enviarNotificacao(
-                admin.fcm_token,
+
+            await criarNotificacao(
+
+                admin.usuario_id,
+
                 'Resumo diário 📊',
+
                 mensagem
+
             );
 
+
+
+            await enviarNotificacao(
+
+                admin.fcm_token,
+
+                'Resumo diário 📊',
+
+                mensagem
+
+            );
+
+
         }
+
 
 
         console.log(
@@ -67,20 +101,20 @@ Sistema Helisan Fleet Manager
         );
 
 
+
     } catch(error){
+
 
         console.error(
             'Erro resumo diário:',
             error
         );
 
+
     }
 
 }
-
-
-
-// Todos os dias às 18h
+// Todos os dias às 19h
 cron.schedule(
     '0 19 * * *',
     () => {

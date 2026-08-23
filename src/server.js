@@ -13,6 +13,8 @@ const veiculosRoutes = require('./routes/veiculos');
 const { enviarNotificacao } = require('./services/notificacao_service');
 const gpsRoutes = require('./routes/gps');
 require('./services/resumo_diario');
+const notificacoesRouter =
+require('./routes/notificacoes');
 const app = express();
 
 app.use(cors());
@@ -56,6 +58,10 @@ app.use('/api/corridas', corridasRoutes);
 app.use('/api/despesas', despesasRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/veiculos', veiculosRoutes);
+app.use(
+'/api/notificacoes',
+notificacoesRouter
+);
 app.use('/api/gps', gpsRoutes);
 const PORT = process.env.PORT || 3000;
 app.post('/api/teste-notificacao', async (req, res) => {

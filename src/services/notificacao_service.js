@@ -145,6 +145,59 @@ async function enviarNotificacaoAdmins(
 
 }
 
+// ======================================
+// GUARDAR HISTÓRICO NO BANCO
+// ======================================
+
+async function guardarNotificacao(
+    usuarioId,
+    titulo,
+    mensagem
+){
+
+    try {
+
+        await pool.query(
+
+        `
+        INSERT INTO notificacoes
+        (
+            usuario_id,
+            titulo,
+            mensagem
+        )
+
+        VALUES
+        (?,?,?)
+
+        `,
+
+        [
+            usuarioId,
+            titulo,
+            mensagem
+        ]
+
+        );
+
+
+        console.log(
+            'Histórico de notificação guardado:',
+            usuarioId
+        );
+
+
+    }catch(error){
+
+        console.error(
+            'Erro guardar notificação:',
+            error
+        );
+
+    }
+
+}
+
 
 
 
@@ -152,6 +205,8 @@ module.exports = {
 
     enviarNotificacao,
 
-    enviarNotificacaoAdmins
+    enviarNotificacaoAdmins,
+
+    guardarNotificacao
 
 };
