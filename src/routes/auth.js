@@ -874,159 +874,229 @@ erro:error.message
 
 // ======================================================
 // GUARDAR FCM TOKEN
-// MOTORISTA / ADMIN
+//
+// ADMIN      -> dispositivos_admin
+// MOTORISTA  -> dispositivos
 // ======================================================
 
+router.post(
+    '/fcm-token',
+    autenticar,
+    async (req, res) => {
 
-router.post('/fcm-token', autenticar, async(req,res)=>{
+        try {
 
+            const usuarioId = req.usuario.id;
+            const tipoUsuario = req.usuario.tipo;
 
-try{
-
-
-const usuarioId =
-req.usuario.id;
-
-
-const {
-
-fcm_token,
-
-dispositivo,
-
-plataforma
-
-}=req.body;
+            const {
+                fcm_token,
+                dispositivo,
+                plataforma
+            } = req.body;
 
 
+            // ==========================================
+            // VALIDAR TOKEN
+            // ==========================================
 
-if(!fcm_token){
+            if (!fcm_token || !fcm_token.trim()) {
 
+                return res.status(400).json({
 
-return res.status(400).json({
+                    sucesso: false,
 
-sucesso:false,
+                    mensagem:
+                    'FCM Token obrigatório.'
 
-mensagem:
-'FCM Token obrigatório.'
+                });
 
-});
-
-
-}
-
-
-
+            }
 
 
-await pool.query(
-
-`
-
-INSERT INTO dispositivos
-
-(
-usuario_id,
-fcm_token,
-dispositivo,
-plataforma,
-ativo
-
-)
-
-VALUES
-
-(
-?,
-?,
-?,
-?,
-1
-
-)
-
-ON DUPLICATE KEY UPDATE
+            const tokenLimpo =
+                fcm_token.trim();
 
 
-ativo = 1,
+            // ==========================================
+            // ADMINISTRADOR
+            // ==========================================
 
-dispositivo = VALUES(dispositivo),
+            if (tipoUsuario === 'admin') {
 
-plataforma = VALUES(plataforma),
+                await pool.query(
 
-ultimo_acesso = CURRENT_TIMESTAMP
+                    `
+                    INSERT INTO dispositivos_admin
+                    (
+                        usuario_id,
+                        fcm_token,
+                        dispositivo,
+                        ultimo_acesso
+                    )
+
+                    VALUES
+                    (
+                        ?,
+                        ?,
+                        ?,
+                        CURRENT_TIMESTAMP
+                    )
+
+                    ON DUPLICATE KEY UPDATE
+
+                        usuario_id =
+                        VALUES(usuario_id),
+
+                        dispositivo =
+                        VALUES(dispositivo),
+
+                        ultimo_acesso =
+                        CURRENT_TIMESTAMP
+                    `,
+
+                    [
+                        usuarioId,
+                        tokenLimpo,
+                        dispositivo || 'Android'
+                    ]
+
+                );
 
 
-`
-
-,
-
-[
-
-usuarioId,
-
-fcm_token,
-
-dispositivo || 'Android',
-
-plataforma || 'Android'
+                console.log(
+                    'FCM ADMIN guardado:',
+                    usuarioId
+                );
 
 
-]
+                return res.json({
 
+                    sucesso: true,
+
+                    tipo: 'admin',
+
+                    mensagem:
+                    'FCM do administrador registado com sucesso.'
+
+                });
+
+            }
+
+
+            // ==========================================
+            // MOTORISTA
+            // ==========================================
+
+            if (tipoUsuario === 'motorista') {
+
+                await pool.query(
+
+                    `
+                    INSERT INTO dispositivos
+                    (
+                        usuario_id,
+                        fcm_token,
+                        dispositivo,
+                        plataforma,
+                        ativo
+                    )
+
+                    VALUES
+                    (
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        1
+                    )
+
+                    ON DUPLICATE KEY UPDATE
+
+                        usuario_id =
+                        VALUES(usuario_id),
+
+                        dispositivo =
+                        VALUES(dispositivo),
+
+                        plataforma =
+                        VALUES(plataforma),
+
+                        ativo = 1,
+
+                        ultimo_acesso =
+                        CURRENT_TIMESTAMP
+                    `,
+
+                    [
+                        usuarioId,
+                        tokenLimpo,
+                        dispositivo || 'Android',
+                        plataforma || 'Android'
+                    ]
+
+                );
+
+
+                console.log(
+                    'FCM MOTORISTA guardado:',
+                    usuarioId
+                );
+
+
+                return res.json({
+
+                    sucesso: true,
+
+                    tipo: 'motorista',
+
+                    mensagem:
+                    'FCM do motorista registado com sucesso.'
+
+                });
+
+            }
+
+
+            // ==========================================
+            // TIPO INVÁLIDO
+            // ==========================================
+
+            return res.status(400).json({
+
+                sucesso: false,
+
+                mensagem:
+                'Tipo de utilizador inválido.'
+
+            });
+
+
+        } catch (error) {
+
+
+            console.error(
+                'ERRO AO GUARDAR FCM:',
+                error
+            );
+
+
+            return res.status(500).json({
+
+                sucesso: false,
+
+                mensagem:
+                'Erro ao guardar FCM.',
+
+                erro:
+                error.message
+
+            });
+
+        }
+
+    }
 );
-
-
-
-
-
-console.log(
-'FCM guardado:',
-usuarioId
-);
-
-
-
-
-
-return res.json({
-
-sucesso:true,
-
-mensagem:
-'FCM registado com sucesso.'
-
-});
-
-
-
-
-}catch(error){
-
-
-console.error(
-'Erro FCM:',
-error
-);
-
-
-
-return res.status(500).json({
-
-sucesso:false,
-
-mensagem:
-'Erro ao guardar FCM.',
-
-erro:error.message
-
-});
-
-
-}
-
-
-});
 // ======================================================
 // EXPORTAR ROUTER
 // ======================================================
