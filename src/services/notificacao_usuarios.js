@@ -19,7 +19,9 @@ const {
 
 async function notificarAdmins(
     titulo,
-    mensagem
+    mensagem,
+    tipo,
+    referenciaId
 ){
 
     try {
@@ -65,13 +67,17 @@ for(const admin of admins){
 
     await criarNotificacao(
 
-        admin.usuario_id,
+    admin.usuario_id,
 
-        titulo,
+    titulo,
 
-        mensagem
+    mensagem,
 
-    );
+    tipo,
+
+    referenciaId
+
+);
 
 
     await enviarNotificacao(
@@ -127,7 +133,11 @@ async function notificarUsuario(
 
     titulo,
 
-    mensagem
+    mensagem,
+
+    tipo,
+
+    referenciaId
 
 ){
 
@@ -181,10 +191,13 @@ async function notificarUsuario(
 
     titulo,
 
-    mensagem
+    mensagem,
+
+    tipo,
+
+    referenciaId
 
 );
-
 
 
             await enviarNotificacao(

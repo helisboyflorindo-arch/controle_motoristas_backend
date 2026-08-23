@@ -93,7 +93,73 @@ mensagem:'Erro ao buscar notificações.'
 
 );
 
+// ==========================================
+// CONTAR NOTIFICAÇÕES NÃO LIDAS
+// ==========================================
 
+router.get(
+'/contador',
+autenticar,
+
+async(req,res)=>{
+
+try{
+
+const usuarioId = req.usuario.id;
+
+
+const [resultado] = await pool.query(
+
+`
+SELECT COUNT(*) AS total
+
+FROM notificacoes
+
+WHERE usuario_id = ?
+
+AND lida = 0
+
+`,
+
+[
+usuarioId
+]
+
+);
+
+
+return res.json({
+
+sucesso:true,
+
+total: resultado[0].total
+
+});
+
+
+}catch(error){
+
+console.error(
+'Erro contador notificações:',
+error
+);
+
+
+return res.status(500).json({
+
+sucesso:false,
+
+erro:error.message
+
+});
+
+
+}
+
+
+}
+
+);
 
 
 module.exports = router;

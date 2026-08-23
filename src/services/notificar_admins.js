@@ -8,10 +8,11 @@ const {
     criarNotificacao
 } = require('./notificacao_database');
 
-
 async function notificarAdmins(
     titulo,
-    mensagem
+    mensagem,
+    tipo,
+    referenciaId
 ) {
 
     try {
@@ -43,12 +44,19 @@ async function notificarAdmins(
 
         for (const admin of admins) {
 
-            await criarNotificacao(
-   admin.usuario_id,
-    titulo,
-    mensagem
-);
+      await criarNotificacao(
 
+admin.usuario_id,
+
+titulo,
+
+mensagem,
+
+tipo,
+
+referenciaId
+
+);
 
             await enviarNotificacao(
                 admin.fcm_token,

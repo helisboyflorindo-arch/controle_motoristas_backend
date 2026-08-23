@@ -8,7 +8,9 @@ const pool = require('../db');
 async function criarNotificacao(
     usuarioId,
     titulo,
-    mensagem
+    mensagem,
+    tipo,
+    referenciaId
 ){
 
     try {
@@ -18,22 +20,25 @@ async function criarNotificacao(
 
         `
         INSERT INTO notificacoes
-        (
-            usuario_id,
-            titulo,
-            mensagem
-        )
+(
+usuario_id,
+titulo,
+mensagem,
+tipo,
+referencia_id
+)
 
-        VALUES
-        (?,?,?)
+VALUES (?,?,?,?,?)
 
         `,
 
         [
-            usuarioId,
-            titulo,
-            mensagem
-        ]
+ usuarioId,
+ titulo,
+ mensagem,
+ tipo,
+ referenciaId
+]
 
         );
 

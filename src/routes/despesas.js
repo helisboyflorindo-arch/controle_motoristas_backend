@@ -214,7 +214,11 @@ await notificarAdmins(
 
 'Nova despesa registada',
 
-`${req.usuario.nome} registou uma despesa de ${valorNumerico} Kz`
+`${req.usuario.nome} registou uma despesa de ${valorNumerico} Kz`,
+
+'despesa',
+
+resultado.insertId
 
 );
 
@@ -967,8 +971,11 @@ dados[0].usuario_id,
 
 'Despesa aprovada ✅',
 
-`A sua despesa de ${dados[0].categoria} no valor de ${dados[0].valor} Kz foi aprovada.`
+`A sua despesa de ${dados[0].categoria} no valor de ${dados[0].valor} Kz foi aprovada.`,
 
+'despesa',
+
+id
 
 );
 
@@ -1139,12 +1146,13 @@ await notificarUsuario(
 
 dados[0].usuario_id,
 
-
 'Despesa rejeitada ❌',
 
+`A sua despesa de ${dados[0].categoria} no valor de ${dados[0].valor} Kz foi rejeitada.`,
 
-`A sua despesa de ${dados[0].categoria} no valor de ${dados[0].valor} Kz foi rejeitada.`
+'despesa',
 
+id
 
 );
 
@@ -1164,7 +1172,6 @@ mensagem:
 'Despesa rejeitada com sucesso.'
 
 });
-
 
 
 
