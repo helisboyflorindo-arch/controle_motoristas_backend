@@ -481,6 +481,44 @@ router.get(
                     despesas.despesas || 0
                 );
 
+                // ==================================================
+// DESPESAS DO ÚLTIMO DIA DO FILTRO
+// ==================================================
+
+const [[despesasDiaFiltro]] =
+    await pool.query(
+
+        `
+        SELECT
+
+            COALESCE(
+                SUM(valor),
+                0
+            ) AS despesas_dia
+
+
+        FROM despesas
+
+
+        WHERE DATE(data) = ?
+
+
+        AND status = 'aprovada'
+
+        `,
+
+        [
+            dataFim
+        ]
+
+    );
+
+
+const despesasHojeTotal =
+    Number(
+        despesasDiaFiltro.despesas_dia || 0
+    );
+
 
             const saldoGeral =
                 receitaTotal
@@ -1006,7 +1044,7 @@ router.get(
                         despesasTotal.toFixed(2),
 
                     despesas_hoje:
-                        despesasTotal.toFixed(2),
+    despesasHojeTotal.toFixed(2),
 
                     total_despesas_registros:
                         totalDespesasRegistros,
