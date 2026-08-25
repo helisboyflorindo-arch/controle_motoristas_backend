@@ -43,18 +43,16 @@ router.post(
                 });
 
             }
+            const origem_registo = "APP";
 
             // criar id offline
 const id_offline =
 'HIACE-' + Date.now();
 
+              const [resultado] = await pool.query(
 
-
-            const [resultado] =
-            await pool.query(
-
-                `
-                INSERT INTO viagens_hiace
+`
+INSERT INTO viagens_hiace
 (
 motorista_id,
 rota,
@@ -71,18 +69,16 @@ NOW(),
 ?,
 ?
 )
+`,
 
-                `,
-
-               [
+[
 motorista_id,
 rota,
-id_offline || null,
-origem_registo || 'online'
+id_offline,
+origem_registo
 ]
 
-            );
-
+);
 
 
             res.json({
