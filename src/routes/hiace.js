@@ -44,6 +44,10 @@ router.post(
 
             }
 
+            // criar id offline
+const id_offline =
+'HIACE-' + Date.now();
+
 
 
             const [resultado] =
