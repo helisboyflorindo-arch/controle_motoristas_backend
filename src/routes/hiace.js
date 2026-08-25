@@ -27,7 +27,7 @@ router.post(
 
 
             const motorista_id =
-                req.usuario.id;
+    req.usuario.motorista_id;
 
 
 
@@ -247,8 +247,7 @@ router.get(
 
 
             const motorista_id =
-            req.usuario.id;
-
+    req.usuario.motorista_id;
 
 
             const [[viagem]] =
