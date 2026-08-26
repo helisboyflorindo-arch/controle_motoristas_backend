@@ -8,15 +8,16 @@ const router = express.Router();
 router.get('/', autenticar, somenteAdmin, async (req, res) => {
   try {
     const [motoristas] = await pool.query(`
-      SELECT
-        id,
-        nome,
-        telefone,
-        documento,
-        email,
-        ativo,
-        created_at
-      FROM motoristas
+     SELECT
+ id,
+ nome,
+ telefone,
+ documento,
+ email,
+ ativo,
+ tipo_motorista,
+ created_at
+FROM motoristas
       ORDER BY id DESC
     `);
 
@@ -89,7 +90,8 @@ router.post('/', autenticar, somenteAdmin, async (req, res) => {
       nome,
       telefone,
       documento,
-      email
+      email,
+      tipo_motorista
     } = req.body;
 
     if (!nome || !telefone || !documento) {
@@ -99,19 +101,28 @@ router.post('/', autenticar, somenteAdmin, async (req, res) => {
       });
     }
 
-    const [resultado] = await pool.query(
-      `
-      INSERT INTO motoristas
-      (nome, telefone, documento, email)
-      VALUES (?, ?, ?, ?)
-      `,
-      [
-        nome,
-        telefone,
-        documento,
-        email || null
-      ]
-    );
+   const [resultado] = await pool.query(
+`
+INSERT INTO motoristas
+(
+nome,
+telefone,
+documento,
+email,
+tipo_motorista
+)
+
+VALUES
+(?,?,?,?,?)
+`,
+[
+nome,
+telefone,
+documento,
+email || null,
+tipo_motorista || 'normal'
+]
+);
 
     res.status(201).json({
       sucesso: true,
@@ -143,12 +154,13 @@ router.put('/:id', autenticar, somenteAdmin, async (req, res) => {
   try {
     const { id } = req.params;
 
-    const {
-      nome,
-      telefone,
-      documento,
-      email
-    } = req.body;
+  const {
+ nome,
+ telefone,
+ documento,
+ email,
+ tipo_motorista
+}=req.body;
 
     if (!nome || !telefone || !documento) {
       return res.status(400).json({
@@ -159,21 +171,23 @@ router.put('/:id', autenticar, somenteAdmin, async (req, res) => {
 
     const [resultado] = await pool.query(
       `
-      UPDATE motoristas
-      SET
-        nome = ?,
-        telefone = ?,
-        documento = ?,
-        email = ?
-      WHERE id = ?
+     UPDATE motoristas
+SET
+nome=?,
+telefone=?,
+documento=?,
+email=?,
+tipo_motorista=?
+WHERE id=?
       `,
       [
-        nome,
-        telefone,
-        documento,
-        email || null,
-        id
-      ]
+nome,
+telefone,
+documento,
+email || null,
+tipo_motorista || 'normal',
+id
+]
     );
 
     if (resultado.affectedRows === 0) {
