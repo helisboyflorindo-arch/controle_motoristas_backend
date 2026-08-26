@@ -83,6 +83,8 @@ origem_registo
 
 );
 
+console.log("VIAGEM CRIADA:", resultado.insertId);
+
 
             res.json({
 
