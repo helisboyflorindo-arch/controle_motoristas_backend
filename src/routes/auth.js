@@ -39,23 +39,32 @@ router.post('/login', async (req, res) => {
         const [usuarios] = await pool.query(
 
         `
-        SELECT
+       SELECT
 
-            id,
-            nome,
-            telefone,
-            email,
-            senha,
-            tipo,
-            motorista_id,
-            ativo,
-            created_at
+u.id,
+u.nome,
+u.telefone,
+u.email,
+u.senha,
+u.tipo,
+u.motorista_id,
+u.ativo,
+u.created_at,
 
-        FROM usuarios
+m.tipo_motorista
 
-        WHERE email = ?
 
-        LIMIT 1
+FROM usuarios u
+
+
+LEFT JOIN motoristas m
+
+ON m.id = u.motorista_id
+
+
+WHERE u.email = ?
+
+LIMIT 1
 
         `,
 
@@ -142,7 +151,10 @@ router.post('/login', async (req, res) => {
             tipo: usuario.tipo,
 
             motorista_id:
-            usuario.motorista_id
+            usuario.motorista_id,
+            
+            tipo_motorista:
+usuario.tipo_motorista
 
         },
 
@@ -226,7 +238,8 @@ nome,
 telefone,
 documento,
 email,
-senha
+senha,
+tipo_motorista
 
 }=req.body;
 
@@ -351,12 +364,14 @@ nome,
 telefone,
 documento,
 email,
+tipo_motorista,
 ativo
 )
 
 VALUES
 
 (
+?,
 ?,
 ?,
 ?,
@@ -370,7 +385,8 @@ VALUES
 nome,
 telefone,
 documento,
-email
+email,
+tipo_motorista || 'normal'
 ]
 
 );
