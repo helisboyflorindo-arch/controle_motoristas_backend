@@ -311,9 +311,9 @@ SELECT
 COUNT(*) total_corridas,
 
 COALESCE(
-SUM(valor_total),
-0
-) receita
+    SUM(valor_total),
+    0
+) AS receita_hiace
 
 
 FROM corridas
@@ -452,12 +452,12 @@ SELECT
 COUNT(*) viagens,
 
 COALESCE(
-SUM(valor),
-0
-) receita,
+    SUM(valor_total),
+    0
+) AS receita_hiace
 
 COALESCE(
-SUM(passageiros),
+SUM(total_passageiros)
 0
 ) passageiros
 
@@ -465,7 +465,7 @@ SUM(passageiros),
 FROM viagens_hiace
 
 
-WHERE DATE(inicio)
+WHERE DATE(data_inicio)
 BETWEEN ? AND ?
 
 
@@ -591,9 +591,9 @@ COUNT(*) total_corridas,
 
 
 COALESCE(
-SUM(valor_total),
-0
-) receita
+    SUM(valor_total),
+    0
+) AS receita_hiace
 
 
 FROM corridas
@@ -690,61 +690,39 @@ dataFim
 // HIACE MOTORISTA
 // ==============================
 
-
-const [[hiaceMotorista]]
-=
+const [[hiaceMotorista]] =
 await pool.query(
-
 `
-
 SELECT
 
-
-COUNT(*) viagens,
-
+COUNT(*) AS viagens,
 
 COALESCE(
-SUM(valor),
-0
-) receita,
-
+    SUM(valor_total),
+    0
+) AS receita,
 
 COALESCE(
-SUM(passageiros),
-0
-) passageiros
-
+    SUM(total_passageiros),
+    0
+) AS passageiros
 
 
 FROM viagens_hiace
 
 
+WHERE motorista_id = ?
 
-WHERE motorista_id=?
-
-
-
-AND DATE(inicio)
-
+AND DATE(data_inicio)
 BETWEEN ? AND ?
 
-
 `,
-
 [
-
-motorista.id,
-
-dataInicio,
-
-dataFim
-
+ motorista.id,
+ dataInicio,
+ dataFim
 ]
-
 );
-
-
-
 
 
 const totalCorridasMotorista =
@@ -889,10 +867,9 @@ data_corrida,
 
 
 COALESCE(
-SUM(valor_total),
-0
-) receita
-
+    SUM(valor_total),
+    0
+) AS receita_hiace
 
 
 FROM corridas
