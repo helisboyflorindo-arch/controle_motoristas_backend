@@ -321,71 +321,107 @@ router.get(
 // ======================================================
 // FECHAR VIAGEM
 // ======================================================
-
-
 router.put(
-    '/fechar/:id',
-    autenticar,
-    async(req,res)=>{
+'/fechar/:id',
+autenticar,
+async(req,res)=>{
+
+try{
 
 
-        try{
+const [[viagem]] = await pool.query(
 
-
-            await pool.query(
-
-                `
-
-                UPDATE viagens_hiace
-
-                SET
-
-                status='finalizada',
-
-                data_fim=NOW()
-
-
-                WHERE id=?
-
-
-                `,
-
-                [
-                    req.params.id
-                ]
-
-            );
-
-
-
-            res.json({
-
-                sucesso:true,
-
-                mensagem:
-                'Viagem fechada.'
-
-            });
-
-
-
-        }catch(error){
-
-
-            res.status(500).json({
-
-                sucesso:false
-
-            });
-
-
-        }
-
-
-    }
+`
+SELECT *
+FROM viagens_hiace
+WHERE id=?
+`,
+[
+req.params.id
+]
 
 );
 
+
+
+if(!viagem){
+
+return res.status(404).json({
+
+sucesso:false,
+
+mensagem:'Viagem não encontrada.'
+
+});
+
+}
+
+
+
+
+await pool.query(
+
+`
+UPDATE viagens_hiace
+
+SET
+
+status='finalizada',
+
+data_fim=NOW()
+
+WHERE id=?
+
+`,
+
+[
+req.params.id
+]
+
+);
+
+
+
+res.json({
+
+sucesso:true,
+
+mensagem:'Viagem fechada.',
+
+viagem:{
+
+id:viagem.id,
+
+rota:viagem.rota,
+
+ganho:viagem.valor_total
+
+}
+
+});
+
+
+
+}catch(error){
+
+console.log(error);
+
+
+res.status(500).json({
+
+sucesso:false,
+
+mensagem:'Erro ao fechar viagem.'
+
+});
+
+
+}
+
+
+}
+
+);
 // ======================================================
 // LISTAR VIAGENS HIACE - ADMIN
 // ======================================================
@@ -467,6 +503,85 @@ router.get(
 
 
     }
+);
+
+
+// ======================================================
+// HISTÓRICO DO MOTORISTA
+// ======================================================
+
+router.get(
+'/historico',
+autenticar,
+async(req,res)=>{
+
+try{
+
+
+const motorista_id =
+req.usuario.motorista_id;
+
+
+
+const [viagens] = await pool.query(
+
+`
+SELECT
+
+id,
+rota,
+data_inicio,
+data_fim,
+total_passageiros,
+valor_total,
+status
+
+FROM viagens_hiace
+
+WHERE motorista_id=?
+
+AND status='finalizada'
+
+ORDER BY id DESC
+
+`,
+[
+motorista_id
+]
+
+);
+
+
+
+res.json({
+
+sucesso:true,
+
+viagens:viagens
+
+});
+
+
+
+}catch(error){
+
+console.log(error);
+
+
+res.status(500).json({
+
+sucesso:false,
+
+mensagem:'Erro ao buscar histórico.'
+
+});
+
+
+}
+
+
+}
+
 );
 
 module.exports = router;
