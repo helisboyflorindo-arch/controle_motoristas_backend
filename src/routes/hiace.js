@@ -26,8 +26,11 @@ router.post(
             } = req.body;
 
 
-            const motorista_id =
-    req.usuario.motorista_id;
+        const motorista_id =
+req.usuario.motorista_id;
+
+console.log("USUARIO JWT:", req.usuario);
+console.log("MOTORISTA ID:", motorista_id);
 
 
 
