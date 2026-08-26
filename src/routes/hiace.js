@@ -509,7 +509,6 @@ router.get(
 // ======================================================
 // HISTÓRICO DO MOTORISTA
 // ======================================================
-
 router.get(
 '/historico',
 autenticar,
@@ -523,7 +522,8 @@ req.usuario.motorista_id;
 
 
 
-const [viagens] = await pool.query(
+const [viagens] =
+await pool.query(
 
 `
 SELECT
@@ -553,11 +553,41 @@ motorista_id
 
 
 
+const [despesas] =
+await pool.query(
+
+`
+SELECT
+
+id,
+categoria,
+valor,
+observacao,
+data
+
+FROM despesas
+
+WHERE motorista_id=?
+
+ORDER BY id DESC
+
+`,
+[
+motorista_id
+]
+
+);
+
+
+
 res.json({
 
 sucesso:true,
 
-viagens:viagens
+viagens,
+
+despesas
+
 
 });
 
@@ -570,9 +600,7 @@ console.log(error);
 
 res.status(500).json({
 
-sucesso:false,
-
-mensagem:'Erro ao buscar histórico.'
+sucesso:false
 
 });
 
@@ -580,8 +608,6 @@ mensagem:'Erro ao buscar histórico.'
 }
 
 
-}
-
-);
+});
 
 module.exports = router;
