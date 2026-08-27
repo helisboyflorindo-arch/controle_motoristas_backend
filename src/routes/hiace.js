@@ -610,4 +610,223 @@ sucesso:false
 
 });
 
+// ======================================================
+// RELATÓRIO HIACE - ADMIN
+// ======================================================
+
+router.get(
+'/relatorio',
+autenticar,
+async(req,res)=>{
+
+try{
+
+
+const {
+inicio,
+fim,
+motorista_id
+}=req.query;
+
+
+
+if(!inicio || !fim){
+
+return res.status(400).json({
+
+sucesso:false,
+
+mensagem:
+'Informe data inicial e final.'
+
+});
+
+}
+
+
+
+let filtroMotorista='';
+
+let parametros=[
+
+inicio,
+fim
+
+];
+
+
+
+if(motorista_id){
+
+filtroMotorista=
+' AND motorista_id=? ';
+
+
+parametros.push(
+Number(motorista_id)
+);
+
+}
+
+
+
+// ==============================
+// TOTAIS
+// ==============================
+
+
+const [[totais]] =
+await pool.query(
+
+`
+SELECT
+
+
+COUNT(*) AS viagens,
+
+
+COALESCE(
+SUM(valor_total),
+0
+) AS receita,
+
+
+COALESCE(
+SUM(total_passageiros),
+0
+) AS passageiros
+
+
+FROM viagens_hiace
+
+
+WHERE DATE(data_inicio)
+
+BETWEEN ? AND ?
+
+
+${filtroMotorista}
+
+`,
+
+parametros
+
+);
+
+
+
+const [lista] =
+await pool.query(
+
+`
+
+SELECT
+
+
+v.id,
+
+v.rota,
+
+v.data_inicio,
+
+v.data_fim,
+
+v.status,
+
+
+v.total_passageiros,
+
+v.valor_total,
+
+
+m.nome AS motorista
+
+
+FROM viagens_hiace v
+
+
+INNER JOIN motoristas m
+
+ON m.id=v.motorista_id
+
+
+WHERE DATE(v.data_inicio)
+
+BETWEEN ? AND ?
+
+
+${filtroMotorista}
+
+
+ORDER BY v.id DESC
+
+
+`,
+
+parametros
+
+);
+
+
+
+res.json({
+
+sucesso:true,
+
+
+totais:{
+
+
+viagens:
+Number(totais.viagens || 0),
+
+
+receita:
+Number(totais.receita || 0)
+.toFixed(2),
+
+
+passageiros:
+Number(totais.passageiros || 0)
+
+
+},
+
+
+viagens:lista
+
+
+});
+
+
+
+}catch(error){
+
+
+console.log(
+'ERRO RELATORIO HIACE:',
+error
+);
+
+
+res.status(500).json({
+
+sucesso:false,
+
+mensagem:
+'Erro ao gerar relatório Hiace.',
+
+erro:
+error.message
+
+});
+
+
+}
+
+
+}
+
+);
+
 module.exports = router;
