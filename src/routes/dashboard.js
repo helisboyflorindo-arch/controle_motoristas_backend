@@ -129,8 +129,8 @@ const [ano,mes]=data.split('-')
 .map(Number);
 
 
-dataInicio=
-`${ano}-${String(mesh).padStart(2,'0')}-01`;
+dataInicio =
+`${ano}-${String(mes).padStart(2,'0')}-01`;
 
 
 const ultimo=
@@ -449,17 +449,17 @@ await pool.query(
 `
 SELECT
 
-COUNT(*) viagens,
+COUNT(*) AS viagens,
 
 COALESCE(
     SUM(valor_total),
     0
-) AS receita_hiace
+) AS receita_hiace,
 
 COALESCE(
-SUM(total_passageiros)
-0
-) passageiros
+    SUM(total_passageiros),
+    0
+) AS passageiros
 
 
 FROM viagens_hiace
@@ -476,7 +476,6 @@ ${filtroHiace}
 parametrosHiace
 
 );
-
 
 
 const viagensHiace=
@@ -586,14 +585,12 @@ await pool.query(
 `
 SELECT
 
-
 COUNT(*) total_corridas,
-
 
 COALESCE(
     SUM(valor_total),
     0
-) AS receita_hiace
+) AS receita
 
 
 FROM corridas
@@ -867,9 +864,9 @@ data_corrida,
 
 
 COALESCE(
-    SUM(valor_total),
-    0
-) AS receita_hiace
+SUM(valor_total),
+0
+) AS receita
 
 
 FROM corridas
